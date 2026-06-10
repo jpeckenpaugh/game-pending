@@ -1,0 +1,114 @@
+The simplest approach for a game with these specific requirements is using the
+HTML5 Canvas API with Vanilla JavaScript.
+
+Since your game uses basic geometric shapes and line art, you don't need a heavy
+game engine like Phaser or PixiJS. Using "pure" JS keeps the file size tiny and
+works instantly in any browser without a build process.
+
+1. The Core Setup
+
+You only need two files: index.html and game.js.
+
+  - HTML: A single <canvas> element.
+  - CSS: Set the background to white and the canvas to display: block.
+  - JS: A "Game Loop" using requestAnimationFrame that clears the screen,
+    updates positions, and redraws everything 60 times per second.
+
+2. Implementation Logic for Your Requirements
+
+| Requirement              | Implementation Strategy                                                                                                                                              |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. B\&W Line Art**     | Set `ctx.strokeStyle = "black"` and `ctx.fillStyle = "white"`. Use `ctx.stroke()` for outlines.                                                                      |
+| **2. Stick Person**      | Use `ctx.beginPath()` and `ctx.lineTo()` for the limbs/torso, and `ctx.arc()` for the head.                                                                          |
+| **3. Ground Line**       | A fixed `y` coordinate (e.g., `canvas.height - 50`). Draw a line from `0` to `canvas.width`.                                                                         |
+| **4. Projectile (\*)**   | Use `ctx.fillText("*", x, y)` to draw the character directly at the projectile's location.                                                                           |
+| **5. Enemies (Circles)** | Use `ctx.arc(x, y, radius, 0, Math.PI * 2)` and `ctx.stroke()`.                                                                                                      |
+| **6. Level Scaling**     | Store enemies in an array. Initialize the array with 10 objects at start.                                                                                            |
+| **7. Ammo Count**        | A simple variable `let ammo = 10;`. Decrement when space is pressed.                                                                                                 |
+| **8. Collection**        | When an enemy is hit, remove it and add a "Collectible" object (e.g., a small '+') at its last `x, y`. If the player's coordinates overlap this object, `ammo += 2`. |
+
+3. Basic Code Structure Example
+
+This structure handles the movement, shooting, and the "collectible" logic you
+requested.
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let player = { x: 50, y: 300, ammo: 10 };
+let projectiles = [];
+let enemies = [];
+let drops = []; // For collected ammo
+
+// 1. Initialize 10 enemies
+for(let i=0; i<10; i++) {
+    enemies.push({ x: 400 + (i * 100), y: 300, alive: true });
+}
+
+function update() {
+    // Move projectiles
+    projectiles.forEach((p, pi) => {
+        p.x += 5;
+        // Collision: Projectile vs Enemy
+        enemies.forEach((e, ei) => {
+            if (e.alive && Math.hypot(p.x - e.x, p.y - e.y) < 20) {
+                e.alive = false;
+                projectiles.splice(pi, 1);
+                // Drop 2 projectiles
+                drops.push({ x: e.x, y: e.y, amount: 2 });
+            }
+        });
+    });
+
+    // Collection: Player vs Drops
+    drops.forEach((d, di) => {
+        if (Math.hypot(player.x - d.x, player.y - d.y) < 30) {
+            player.ammo += d.amount;
+            drops.splice(di, 1);
+        }
+    });
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Ground
+    ctx.beginPath();
+    ctx.moveTo(0, 320); ctx.lineTo(canvas.width, 320);
+    ctx.stroke();
+
+    // Draw Stickman (Simplified)
+    ctx.beginPath();
+    ctx.arc(player.x, player.y - 20, 10, 0, Math.PI*2); // Head
+    ctx.moveTo(player.x, player.y - 10); ctx.lineTo(player.x, player.y + 10); // Body
+    ctx.stroke();
+    
+    // Draw UI
+    ctx.fillText(`Ammo: ${player.ammo}`, 10, 20);
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+4. Recommendations for Mobile/Tablet
+
+To make this work on phone/tablets without a keyboard:
+
+  - Touch Zones: Divide the screen into invisible "zones." Touching the left
+    side moves the player, and the right side fires.
+  - Touch Events: Use canvas.addEventListener('touchstart', ...) instead of
+    keydown.
+  - Responsive Canvas: Use CSS to set the canvas width to 100vw (viewport width)
+    so it fits any screen size.
+
+Why this is the "Simplest"
+
+  - Zero Dependencies: You don't need to download or link any libraries.
+  - Standardized: This works in Chrome, Safari, and Firefox immediately.
+  - Visual Style: The line-art aesthetic is native to the Canvas "Stroke"
+    system, making the coding very intuitive.
+
