@@ -43,6 +43,24 @@ export function beginNewGame() {
   game.state = states.PLAYING;
 }
 
+export function returnToTitle() {
+  resetPowerUps();
+  player.ammo = 10;
+  startLevel(1);
+  game.state = states.TITLE;
+  game.titleSelection = 0;
+}
+
+export function pauseGame() {
+  if (game.state !== states.PLAYING) return;
+  game.state = states.PAUSED;
+  game.pauseSelection = 0;
+}
+
+export function resumeGame() {
+  if (game.state === states.PAUSED) game.state = states.PLAYING;
+}
+
 export function continueToNextLevel() {
   player.ammo += 4;
   startLevel(game.completedLevel + 1);

@@ -200,11 +200,11 @@ function drawCenteredText(lines, top) {
   ctx.textAlign = "left";
 }
 
-function drawButton(label, y) {
+function drawButton(label, y, selected = false) {
   const width = Math.min(260, window.innerWidth - 48);
   const height = 48;
   const x = (window.innerWidth - width) / 2;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = selected ? 4 : 2;
   ctx.strokeRect(x, y, width, height);
   ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textAlign = "center";
@@ -224,8 +224,8 @@ function drawScreenOverlay() {
       { text: customization.name || "Game Pending", font: "36px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 46 },
       { text: customization.tagline || "Name Pending", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
     ], Math.max(112, window.innerHeight * 0.24));
-    drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46));
-    drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62));
+    drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46), game.titleSelection === 0);
+    drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62), game.titleSelection === 1);
     drawCenteredText([
       { text: "Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space", font: "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 24 },
     ], Math.max(366, window.innerHeight * 0.46 + 148));
@@ -235,6 +235,10 @@ function drawScreenOverlay() {
     drawCustomizeScreen();
   }
 
+  if (game.state === states.PAUSED) {
+    drawPauseScreen();
+  }
+
   if (game.state === states.LEVEL_COMPLETE) {
     drawCenteredText([
       { text: `LEVEL ${game.completedLevel} CLEAR`, font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 44 },
@@ -242,7 +246,7 @@ function drawScreenOverlay() {
       { text: `Next wave: ${10 + game.completedLevel * 4} enemies`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
       { text: "+4 ammo bonus", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
     ], Math.max(120, window.innerHeight * 0.28));
-    drawButton("CONTINUE", Math.max(260, window.innerHeight * 0.56));
+    drawButton("CONTINUE", Math.max(260, window.innerHeight * 0.56), true);
   }
 
   if (game.state === states.GAME_OVER) {
@@ -250,8 +254,24 @@ function drawScreenOverlay() {
       { text: "OUT OF AMMO", font: "32px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
       { text: `Reached level ${game.level}`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
     ], Math.max(132, window.innerHeight * 0.3));
-    drawButton("NEW GAME", Math.max(250, window.innerHeight * 0.54));
+    drawButton("NEW GAME", Math.max(250, window.innerHeight * 0.54), true);
   }
+}
+
+function drawPauseScreen() {
+  drawCenteredText([
+    { text: "PAUSED", font: "32px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 52 },
+  ], Math.max(118, window.innerHeight * 0.22));
+
+  const startY = Math.max(210, window.innerHeight * 0.38);
+  drawButton("CONTINUE", startY, game.pauseSelection === 0);
+  drawButton("CUSTOMIZE", startY + 62, game.pauseSelection === 1);
+  drawButton("RESTART GAME", startY + 124, game.pauseSelection === 2);
+
+  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("Use Up/Down and Enter", window.innerWidth / 2, startY + 204);
+  ctx.textAlign = "left";
 }
 
 function drawCustomizeScreen() {
@@ -265,11 +285,29 @@ function drawCustomizeScreen() {
   drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
   drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
 
-  drawButton("BACK", Math.max(340, startY + 156));
+  drawSplitButtons("SAVE", "CANCEL", Math.max(340, startY + 156));
 
   ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textAlign = "center";
-  ctx.fillText("Click a row. Type to edit text. Use +/- or arrows for power-ups. Esc returns.", window.innerWidth / 2, Math.max(420, startY + 224));
+  ctx.fillText("Use arrows to select. Type text. +/- changes power-ups. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(420, startY + 224));
+  ctx.textAlign = "left";
+}
+
+function drawSplitButtons(leftLabel, rightLabel, y) {
+  const gap = 16;
+  const totalWidth = Math.min(360, window.innerWidth - 48);
+  const width = (totalWidth - gap) / 2;
+  const leftX = (window.innerWidth - totalWidth) / 2;
+  drawFixedButton(leftLabel, leftX, y, width, customization.selectedField === "save");
+  drawFixedButton(rightLabel, leftX + width + gap, y, width, customization.selectedField === "cancel");
+}
+
+function drawFixedButton(label, x, y, width, selected = false) {
+  ctx.lineWidth = selected ? 4 : 2;
+  ctx.strokeRect(x, y, width, 48);
+  ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(label, x + width / 2, y + 31);
   ctx.textAlign = "left";
 }
 

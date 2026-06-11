@@ -1,8 +1,8 @@
 import { game, keys, states, touches } from "./state.js";
-import { activateCurrentScreen, beginNewGame } from "./level.js";
+import { beginNewGame, continueToNextLevel, pauseGame, resumeGame, returnToTitle } from "./level.js";
 import { grantPowerUpWithFeedback } from "./powerups.js";
 import { shoot } from "./projectiles.js";
-import { closeCustomize, customizeActionAt, handleCustomizeKey, openCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
+import { cancelCustomize, customizeActionAt, handleCustomizeKey, openCustomize, saveCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
 
 export function setupInput(canvas) {
   window.addEventListener("keydown", (event) => {
@@ -16,10 +16,18 @@ export function setupInput(canvas) {
     if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "s", "w", "r"].includes(key)) {
       event.preventDefault();
     }
-    if ((key === "enter" || key === " " || key === "r") && activateCurrentScreen()) {
+
+    if (handleMenuKey(key)) {
       keys.add(key);
       return;
     }
+
+    if (key === "enter" && game.state === states.PLAYING) {
+      pauseGame();
+      keys.add(key);
+      return;
+    }
+
     if ((key === "arrowup" || key === "w") && !keys.has(key)) game.jumpRequested = true;
     if (key === "g" && !keys.has(key) && game.state === states.PLAYING) grantPowerUpWithFeedback();
     if (key === " ") shoot();
@@ -77,27 +85,33 @@ function handleMenuAction(x, y) {
 
   if (game.state === states.TITLE) {
     const action = titleButtonAt(x, y);
-    if (action === "newGame") {
-      beginNewGame();
-      return true;
-    }
-    if (action === "customize") {
-      openCustomize();
-      return true;
-    }
+    if (action === "newGame") return activateTitleSelection(0);
+    if (action === "customize") return activateTitleSelection(1);
     return false;
   }
 
   if (game.state === states.CUSTOMIZE) {
     const action = customizeActionAt(x, y);
-    if (action === "back") {
-      closeCustomize();
+    if (action === "save") {
+      saveCustomize();
+      return true;
+    }
+    if (action === "cancel") {
+      cancelCustomize();
       return true;
     }
     if (action) {
       selectCustomizeField(action);
       return true;
     }
+    return false;
+  }
+
+  if (game.state === states.PAUSED) {
+    const action = pauseButtonAt(x, y);
+    if (action === "continue") return activatePauseSelection(0);
+    if (action === "customize") return activatePauseSelection(1);
+    if (action === "restart") return activatePauseSelection(2);
     return false;
   }
 
@@ -115,5 +129,88 @@ function handleMenuAction(x, y) {
     && y >= buttonY && y <= buttonY + 48;
   if (!insideButton) return false;
 
-  return activateCurrentScreen();
+  if (game.state === states.LEVEL_COMPLETE) {
+    continueToNextLevel();
+    return true;
+  }
+  if (game.state === states.GAME_OVER) {
+    beginNewGame();
+    return true;
+  }
+  return false;
+}
+
+function handleMenuKey(key) {
+  if (game.state === states.TITLE) {
+    if (key === "arrowup" || key === "w") {
+      game.titleSelection = (game.titleSelection + 1) % 2;
+      return true;
+    }
+    if (key === "arrowdown" || key === "s") {
+      game.titleSelection = (game.titleSelection + 1) % 2;
+      return true;
+    }
+    if (key === "enter" || key === " ") return activateTitleSelection(game.titleSelection);
+  }
+
+  if (game.state === states.PAUSED) {
+    if (key === "arrowup" || key === "w") {
+      game.pauseSelection = (game.pauseSelection + 2) % 3;
+      return true;
+    }
+    if (key === "arrowdown" || key === "s") {
+      game.pauseSelection = (game.pauseSelection + 1) % 3;
+      return true;
+    }
+    if (key === "enter" || key === " ") return activatePauseSelection(game.pauseSelection);
+  }
+
+  if (game.state === states.LEVEL_COMPLETE && (key === "enter" || key === " ")) {
+    continueToNextLevel();
+    return true;
+  }
+
+  if (game.state === states.GAME_OVER && (key === "enter" || key === " " || key === "r")) {
+    beginNewGame();
+    return true;
+  }
+
+  return false;
+}
+
+function activateTitleSelection(selection) {
+  game.titleSelection = selection;
+  if (selection === 0) {
+    beginNewGame();
+  } else {
+    openCustomize(states.TITLE);
+  }
+  return true;
+}
+
+function activatePauseSelection(selection) {
+  game.pauseSelection = selection;
+  if (selection === 0) {
+    resumeGame();
+  } else if (selection === 1) {
+    openCustomize(states.PAUSED);
+  } else {
+    returnToTitle();
+  }
+  return true;
+}
+
+function pauseButtonAt(x, y) {
+  const startY = Math.max(210, window.innerHeight * 0.38);
+  if (insideButton(x, y, startY)) return "continue";
+  if (insideButton(x, y, startY + 62)) return "customize";
+  if (insideButton(x, y, startY + 124)) return "restart";
+  return "";
+}
+
+function insideButton(x, y, buttonY) {
+  const buttonWidth = Math.min(260, window.innerWidth - 48);
+  const buttonX = (window.innerWidth - buttonWidth) / 2;
+  return x >= buttonX && x <= buttonX + buttonWidth
+    && y >= buttonY && y <= buttonY + 48;
 }

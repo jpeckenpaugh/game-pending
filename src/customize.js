@@ -1,14 +1,27 @@
 import { customization, game, states } from "./state.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps"];
+export const customizeFields = ["name", "tagline", "startingPowerUps", "save", "cancel"];
+const defaultName = "Game Pending";
+const defaultTagline = "Name Pending";
 
-export function openCustomize() {
+export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
   customization.selectedField = "name";
+  customization.returnState = returnState;
+  customization.savedName = customization.name;
+  customization.savedTagline = customization.tagline;
+  customization.savedStartingPowerUps = customization.startingPowerUps;
 }
 
-export function closeCustomize() {
-  game.state = states.TITLE;
+export function saveCustomize() {
+  game.state = customization.returnState;
+}
+
+export function cancelCustomize() {
+  customization.name = customization.savedName;
+  customization.tagline = customization.savedTagline;
+  customization.startingPowerUps = customization.savedStartingPowerUps;
+  game.state = customization.returnState;
 }
 
 export function titleButtonAt(x, y) {
@@ -32,7 +45,9 @@ export function customizeActionAt(x, y) {
     if (inside(x, y, row)) return customizeFields[i];
   }
 
-  if (inside(x, y, buttonRect(Math.max(340, startY + 156)))) return "back";
+  const buttonY = Math.max(340, startY + 156);
+  if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
+  if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
 }
 
@@ -41,11 +56,16 @@ export function handleCustomizeKey(event) {
   const lower = key.toLowerCase();
 
   if (lower === "escape") {
-    closeCustomize();
+    cancelCustomize();
     return true;
   }
 
-  if ((event.metaKey || event.ctrlKey) && lower === "a" && customization.selectedField !== "startingPowerUps") {
+  if ((event.metaKey || event.ctrlKey) && lower === "enter") {
+    saveCustomize();
+    return true;
+  }
+
+  if ((event.metaKey || event.ctrlKey) && lower === "a" && isTextField()) {
     setSelectedText("");
     return true;
   }
@@ -60,9 +80,24 @@ export function handleCustomizeKey(event) {
     return true;
   }
 
-  if (lower === "arrowdown" || lower === "enter") {
+  if (lower === "arrowdown") {
     selectRelativeField(1);
     return true;
+  }
+
+  if (lower === "enter") {
+    if (customization.selectedField === "save") saveCustomize();
+    else if (customization.selectedField === "cancel") cancelCustomize();
+    else selectRelativeField(1);
+    return true;
+  }
+
+  if (customization.selectedField === "save" || customization.selectedField === "cancel") {
+    if (lower === "arrowleft" || lower === "arrowright") {
+      customization.selectedField = customization.selectedField === "save" ? "cancel" : "save";
+      return true;
+    }
+    return false;
   }
 
   if (customization.selectedField === "startingPowerUps") {
@@ -87,7 +122,9 @@ export function handleCustomizeKey(event) {
   }
 
   if (key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    setSelectedText((getSelectedText() + key).slice(0, 28));
+    const current = getSelectedText();
+    const next = selectedTextIsDefault() ? key : current + key;
+    setSelectedText(next.slice(0, 28));
     return true;
   }
 
@@ -110,12 +147,34 @@ function getSelectedText() {
     : customization.name;
 }
 
+function isTextField() {
+  return customization.selectedField === "name" || customization.selectedField === "tagline";
+}
+
+function selectedTextIsDefault() {
+  return (customization.selectedField === "name" && customization.name === defaultName)
+    || (customization.selectedField === "tagline" && customization.tagline === defaultTagline);
+}
+
 function setSelectedText(value) {
   if (customization.selectedField === "tagline") {
     customization.tagline = value;
   } else {
     customization.name = value;
   }
+}
+
+function splitButtonRect(y, side) {
+  const gap = 16;
+  const totalWidth = Math.min(360, window.innerWidth - 48);
+  const width = (totalWidth - gap) / 2;
+  const leftX = (window.innerWidth - totalWidth) / 2;
+  return {
+    x: side === "left" ? leftX : leftX + width + gap,
+    y,
+    width,
+    height: 48,
+  };
 }
 
 function buttonRect(y) {
