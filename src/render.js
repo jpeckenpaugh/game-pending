@@ -1,0 +1,284 @@
+import { camera, canvas, ctx, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
+import { groundAt, worldToScreenX } from "./terrain.js";
+import { isDucking } from "./player.js";
+import { powerUpSummary } from "./powerups.js";
+
+function line(x1, y1, x2, y2) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+function drawTerrain() {
+  const startX = Math.max(0, camera.x - 80);
+  const endX = Math.min(world.width, camera.x + window.innerWidth + 80);
+  const first = Math.floor(startX / 40) * 40;
+
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(worldToScreenX(first), groundAt(first) + 0.5);
+  for (let x = first + 40; x <= endX + 40; x += 40) {
+    ctx.lineTo(worldToScreenX(x), groundAt(x) + 0.5);
+  }
+  ctx.stroke();
+
+  ctx.lineWidth = 2;
+  for (let x = Math.floor(startX / 80) * 80; x < endX; x += 80) {
+    const y = groundAt(x + 12) + 8;
+    line(worldToScreenX(x), y, worldToScreenX(x + 22), groundAt(x + 22) + 8);
+  }
+}
+
+function drawStickPerson() {
+  const x = worldToScreenX(player.x);
+  const y = player.y;
+  const ducking = isDucking();
+  const stride = Math.sin(performance.now() / 90) * (Math.abs(player.vx) / 360);
+  const fade = player.invulnerableFor > 0 && Math.floor(performance.now() / 90) % 2 === 0;
+  if (fade) return;
+
+  ctx.lineWidth = 3;
+  if (ducking) {
+    ctx.beginPath();
+    ctx.arc(x, y - 43, 10, 0, Math.PI * 2);
+    ctx.stroke();
+    if (powerUps.specs) {
+      line(x - 8, y - 44, x - 2, y - 44);
+      line(x + 2, y - 44, x + 8, y - 44);
+    }
+    line(x, y - 33, x - 5 * player.facing, y - 18);
+    line(x - 5 * player.facing, y - 18, x + 22 * player.facing, y - 24);
+    line(x - 5 * player.facing, y - 18, x - 20, y);
+    line(x - 5 * player.facing, y - 18, x + 18, y);
+    drawBoots(x, y, true);
+
+    ctx.font = "22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.fillText("*", x + player.facing * 26, y - 20);
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.arc(x, y - 62, 10, 0, Math.PI * 2);
+  ctx.stroke();
+  if (powerUps.specs) {
+    line(x - 8, y - 63, x - 2, y - 63);
+    line(x + 2, y - 63, x + 8, y - 63);
+  }
+  line(x, y - 52, x, y - 24);
+  line(x, y - 43, x - 17 * player.facing, y - 34 + stride * 3);
+  line(x, y - 43, x + 22 * player.facing, y - 38 - stride * 3);
+  line(x, y - 24, x - 14, y);
+  line(x, y - 24, x + 16, y - Math.abs(stride) * 8);
+  drawBoots(x, y, false);
+
+  ctx.font = "22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText("*", x + player.facing * 24, y - 38);
+}
+
+function drawBoots(x, y, ducking) {
+  if (!powerUps.boots) return;
+  if (ducking) {
+    ctx.fillRect(x - 28, y - 8, 14, 8);
+    ctx.fillRect(x + 12, y - 8, 14, 8);
+    return;
+  }
+  ctx.fillRect(x - 22, y - 8, 14, 8);
+  ctx.fillRect(x + 10, y - 8, 14, 8);
+}
+
+function drawEnemy(enemy) {
+  if (!enemy.alive) return;
+  const x = worldToScreenX(enemy.x);
+  if (x < -60 || x > window.innerWidth + 60) return;
+
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(x, enemy.y, enemy.radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  if (enemy.type === "runner") {
+    line(x - enemy.radius - 8, enemy.y + enemy.radius + 4, x + enemy.radius + 8, enemy.y + enemy.radius + 4);
+  }
+
+  if (enemy.type === "hopper") {
+    line(x - 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
+    line(x + 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
+  }
+
+  line(x - 8, enemy.y - 5, x - 2, enemy.y - 5);
+  line(x + 2, enemy.y - 5, x + 8, enemy.y - 5);
+}
+
+function drawDrop(drop) {
+  const x = worldToScreenX(drop.x);
+  const y = drop.y - 8 + Math.sin(drop.bob) * 4;
+  if (x < -40 || x > window.innerWidth + 40) return;
+
+  ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText("+", x - 8, y + 8);
+  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText("2", x + 10, y + 13);
+}
+
+function drawProjectile(projectile) {
+  const x = worldToScreenX(projectile.x);
+  if (x < -20 || x > window.innerWidth + 20) return;
+  if (projectile.homing) {
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, projectile.y, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  } else {
+    ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.fillText("*", x - 8, projectile.y + 8);
+  }
+}
+
+function drawDrone() {
+  if (!drone.active) return;
+  const x = worldToScreenX(drone.x);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(x, drone.y, 18, 8, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  line(x - 7, drone.y - 9, x - 13, drone.y - 17);
+  line(x + 7, drone.y - 9, x + 13, drone.y - 17);
+}
+
+function drawUi() {
+  ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+  ctx.lineWidth = 2;
+  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText(`Ammo: ${player.ammo}`, 18, 28);
+  ctx.fillText(`Level: ${game.level}`, 18, 52);
+  ctx.fillText(`Enemies: ${game.enemiesRemaining}`, 18, 76);
+  ctx.fillText(`Power: ${powerUpSummary()}`, 18, 124);
+  drawRechargeBars(18, 138);
+
+  const progressWidth = Math.min(260, window.innerWidth - 36);
+  ctx.strokeRect(18, 92, progressWidth, 8);
+  ctx.fillRect(18, 92, progressWidth * (player.x / world.width), 8);
+
+  if (game.messageTimer > 0) {
+    ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(game.message, window.innerWidth / 2, 34);
+    ctx.textAlign = "left";
+  }
+
+  if (window.matchMedia("(pointer: coarse)").matches) {
+    ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.fillText("Left: move  |  upper right: jump  |  lower middle: duck  |  lower right: shoot", 18, window.innerHeight - 18);
+  }
+}
+
+function drawRechargeBars(x, y) {
+  let offset = 0;
+  offset += drawRechargeBar("Drone", powerUps.droneLevel, powerUps.droneCharges, powerUps.droneRecharge, x, y + offset);
+  drawRechargeBar("Vest", powerUps.vestLevel, powerUps.vestCharges, powerUps.vestRecharge, x, y + offset);
+}
+
+function drawRechargeBar(label, levelCount, charges, recharge, x, y) {
+  if (levelCount === 0 || charges >= levelCount) return 0;
+  const width = 120;
+  const progress = Math.max(0, Math.min(1, recharge / 10));
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText(label, x, y + 9);
+  ctx.strokeRect(x + 50, y, width, 8);
+  ctx.fillRect(x + 50, y, width * progress, 8);
+  return 16;
+}
+
+function drawCenteredText(lines, top) {
+  ctx.textAlign = "center";
+  for (const lineItem of lines) {
+    ctx.font = lineItem.font;
+    ctx.fillText(lineItem.text, window.innerWidth / 2, top);
+    top += lineItem.gap;
+  }
+  ctx.textAlign = "left";
+}
+
+function drawButton(label, y) {
+  const width = Math.min(260, window.innerWidth - 48);
+  const height = 48;
+  const x = (window.innerWidth - width) / 2;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, width, height);
+  ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText(label, window.innerWidth / 2, y + 31);
+  ctx.textAlign = "left";
+}
+
+function drawScreenOverlay() {
+  if (game.state === states.PLAYING || game.state === states.LEVEL_COLLECTING) return;
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.fillStyle = "#000";
+
+  if (game.state === states.TITLE) {
+    drawCenteredText([
+      { text: "LINE RUNNER", font: "36px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 46 },
+      { text: "Stick figure vs. circle patrols", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
+    ], Math.max(112, window.innerHeight * 0.24));
+    drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46));
+    drawCenteredText([
+      { text: "Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space", font: "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 24 },
+    ], Math.max(300, window.innerHeight * 0.46 + 86));
+  }
+
+  if (game.state === states.LEVEL_COMPLETE) {
+    drawCenteredText([
+      { text: `LEVEL ${game.completedLevel} CLEAR`, font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 44 },
+      { text: `Power-up gained: ${game.lastPowerUp}`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
+      { text: `Next wave: ${10 + game.completedLevel * 4} enemies`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
+      { text: "+4 ammo bonus", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
+    ], Math.max(120, window.innerHeight * 0.28));
+    drawButton("CONTINUE", Math.max(260, window.innerHeight * 0.56));
+  }
+
+  if (game.state === states.GAME_OVER) {
+    drawCenteredText([
+      { text: "OUT OF AMMO", font: "32px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
+      { text: `Reached level ${game.level}`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
+    ], Math.max(132, window.innerHeight * 0.3));
+    drawButton("NEW GAME", Math.max(250, window.innerHeight * 0.54));
+  }
+}
+
+function drawCollectionNotice() {
+  if (game.state !== states.LEVEL_COLLECTING) return;
+  ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("Collecting ammo...", window.innerWidth / 2, 42);
+  ctx.textAlign = "left";
+}
+
+export function draw() {
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = "#000";
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 3;
+
+  drawTerrain();
+  for (const drop of drops) drawDrop(drop);
+  for (const projectile of projectiles) drawProjectile(projectile);
+  for (const enemy of enemies) drawEnemy(enemy);
+  drawDrone();
+
+  for (const particle of particles) {
+    const x = worldToScreenX(particle.x);
+    line(x - 3, particle.y, x + 3, particle.y);
+    line(x, particle.y - 3, x, particle.y + 3);
+  }
+
+  drawStickPerson();
+  drawUi();
+  drawCollectionNotice();
+  drawScreenOverlay();
+}

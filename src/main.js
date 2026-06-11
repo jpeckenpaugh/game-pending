@@ -1,0 +1,112 @@
+import { camera, canvas, ctx, drops, enemies, game, player, states, world } from "./state.js";
+import { draw } from "./render.js";
+import { resizeCanvas, groundAt } from "./terrain.js";
+import { setupInput } from "./input.js";
+import { startLevel, showGameOver, showLevelComplete, startLevelClearCollection } from "./level.js";
+import { updateVestRecharge, absorbOrTakeHit } from "./powerups.js";
+import { updateDrone } from "./drone.js";
+import { updateEnemyPositions, defeatEnemy } from "./enemies.js";
+import { updateProjectiles } from "./projectiles.js";
+import { applyPlayerMovement, canStomp, jumpImpulse, playerDistanceTo } from "./player.js";
+import { addBurst, updateParticles } from "./effects.js";
+
+function update(dt) {
+  if (game.messageTimer > 0) game.messageTimer -= dt;
+
+  if (game.state === states.LEVEL_COLLECTING) {
+    updateLevelClearCollection(dt);
+    return;
+  }
+
+  if (game.state !== states.PLAYING) return;
+
+  player.shootCooldown = Math.max(0, player.shootCooldown - dt);
+  player.invulnerableFor = Math.max(0, player.invulnerableFor - dt);
+  updateVestRecharge(dt);
+  updateDrone(dt);
+
+  applyPlayerMovement(dt, groundAt);
+  updateProjectiles(dt);
+  updateEnemyPositions(dt);
+
+  for (const enemy of enemies) {
+    if (!enemy.alive) continue;
+
+    if (canStomp(enemy)) {
+      defeatEnemy(enemy);
+      player.vy = -jumpImpulse() * 0.6;
+      player.onGround = false;
+      game.message = "Stomp!";
+      game.messageTimer = 1;
+      continue;
+    }
+
+    if (player.invulnerableFor <= 0 && playerDistanceTo(enemy) < enemy.radius + 24) {
+      absorbOrTakeHit(showGameOver);
+    }
+  }
+
+  for (let i = drops.length - 1; i >= 0; i -= 1) {
+    const drop = drops[i];
+    drop.bob += dt * 6;
+    if (playerDistanceTo(drop) < 42) {
+      player.ammo += drop.amount;
+      drops.splice(i, 1);
+      game.message = "+2 ammo";
+      game.messageTimer = 1.1;
+    }
+  }
+
+  updateParticles(dt);
+
+  camera.x += (player.x - window.innerWidth * 0.35 - camera.x) * Math.min(1, dt * 8);
+  camera.x = Math.max(0, Math.min(world.width - window.innerWidth, camera.x));
+
+  if (game.enemiesRemaining === 0) {
+    startLevelClearCollection();
+  }
+}
+
+function updateLevelClearCollection(dt) {
+  const target = { x: player.x, y: player.y - 42 };
+  game.levelClearTimer -= dt;
+
+  for (let i = drops.length - 1; i >= 0; i -= 1) {
+    const drop = drops[i];
+    const dx = target.x - drop.x;
+    const dy = target.y - drop.y;
+    const distance = Math.hypot(dx, dy);
+    const speed = Math.max(260, distance * 5.5);
+
+    drop.bob += dt * 10;
+    if (distance < 12) {
+      player.ammo += drop.amount;
+      addBurst(target.x, target.y, 5);
+      drops.splice(i, 1);
+      continue;
+    }
+
+    drop.x += (dx / Math.max(1, distance)) * speed * dt;
+    drop.y += (dy / Math.max(1, distance)) * speed * dt;
+  }
+
+  updateParticles(dt);
+
+  if (drops.length === 0 && game.levelClearTimer <= 0) {
+    showLevelComplete();
+  }
+}
+
+function loop(now) {
+  const dt = Math.min(0.033, (now - game.lastTime) / 1000);
+  game.lastTime = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener("resize", () => resizeCanvas(canvas, ctx));
+setupInput(canvas);
+resizeCanvas(canvas, ctx);
+startLevel(1);
+requestAnimationFrame(loop);
