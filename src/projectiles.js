@@ -53,10 +53,22 @@ export function updateProjectiles(dt) {
     for (const enemy of enemies) {
       if (!enemy.alive || Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y) > enemy.radius + 7) continue;
       projectiles.splice(i, 1);
+      if (blocksProjectile(enemy, projectile)) {
+        game.message = "Blocked!";
+        game.messageTimer = 0.8;
+        break;
+      }
       defeatEnemy(enemy);
       break;
     }
   }
+}
+
+function blocksProjectile(enemy, projectile) {
+  if (enemy.family !== "square") return false;
+  const projectileIsOnShieldSide = (projectile.x - enemy.x) * enemy.facing > 0;
+  const projectileTravelsIntoShield = projectile.vx * enemy.facing < 0;
+  return projectileIsOnShieldSide && projectileTravelsIntoShield;
 }
 
 export function updateHomingProjectile(projectile) {

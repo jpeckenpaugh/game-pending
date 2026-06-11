@@ -74,11 +74,13 @@ export const customization = {
   name: "Game Pending",
   tagline: "Name Pending",
   startingPowerUps: 0,
+  playerType: "original",
   selectedField: "name",
   returnState: states.TITLE,
   savedName: "Game Pending",
   savedTagline: "Name Pending",
   savedStartingPowerUps: 0,
+  savedPlayerType: "original",
 };
 
 export const game = {

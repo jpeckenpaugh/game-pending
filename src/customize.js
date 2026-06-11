@@ -1,8 +1,10 @@
 import { customization, game, states } from "./state.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps", "save", "cancel"];
+export const customizeFields = ["name", "tagline", "startingPowerUps", "playerType", "save", "cancel"];
+const customizeRows = ["name", "tagline", "startingPowerUps", "playerType"];
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
+const playerTypes = ["original", "croc"];
 
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
@@ -11,6 +13,7 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedName = customization.name;
   customization.savedTagline = customization.tagline;
   customization.savedStartingPowerUps = customization.startingPowerUps;
+  customization.savedPlayerType = customization.playerType;
 }
 
 export function saveCustomize() {
@@ -21,6 +24,7 @@ export function cancelCustomize() {
   customization.name = customization.savedName;
   customization.tagline = customization.savedTagline;
   customization.startingPowerUps = customization.savedStartingPowerUps;
+  customization.playerType = customization.savedPlayerType;
   game.state = customization.returnState;
 }
 
@@ -35,17 +39,17 @@ export function titleButtonAt(x, y) {
 export function customizeActionAt(x, y) {
   const startY = Math.max(170, window.innerHeight * 0.28);
   const rowHeight = 42;
-  for (let i = 0; i < customizeFields.length; i += 1) {
+  for (let i = 0; i < customizeRows.length; i += 1) {
     const row = {
       x: Math.max(24, window.innerWidth * 0.5 - 260),
       y: startY + i * rowHeight,
       width: Math.min(520, window.innerWidth - 48),
       height: 32,
     };
-    if (inside(x, y, row)) return customizeFields[i];
+    if (inside(x, y, row)) return customizeRows[i];
   }
 
-  const buttonY = Math.max(340, startY + 156);
+  const buttonY = Math.max(382, startY + 198);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -116,6 +120,18 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
+  if (customization.selectedField === "playerType") {
+    if (lower === "arrowleft") {
+      selectRelativePlayerType(-1);
+      return true;
+    }
+    if (lower === "arrowright" || lower === " ") {
+      selectRelativePlayerType(1);
+      return true;
+    }
+    return false;
+  }
+
   if (lower === "backspace") {
     setSelectedText(getSelectedText().slice(0, -1));
     return true;
@@ -135,10 +151,20 @@ export function selectCustomizeField(field) {
   if (customizeFields.includes(field)) customization.selectedField = field;
 }
 
+export function cyclePlayerType(offset = 1) {
+  selectRelativePlayerType(offset);
+}
+
 function selectRelativeField(offset) {
   const index = customizeFields.indexOf(customization.selectedField);
   const next = (index + offset + customizeFields.length) % customizeFields.length;
   customization.selectedField = customizeFields[next];
+}
+
+function selectRelativePlayerType(offset) {
+  const index = playerTypes.indexOf(customization.playerType);
+  const next = (index + offset + playerTypes.length) % playerTypes.length;
+  customization.playerType = playerTypes[next];
 }
 
 function getSelectedText() {

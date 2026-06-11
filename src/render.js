@@ -1,7 +1,7 @@
 import { camera, ctx, customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { groundAt, worldToScreenX } from "./terrain.js";
-import { isDucking } from "./player.js";
 import { powerUpSummary } from "./powerups.js";
+import { drawPlayerCharacter } from "./playerCharacters.js";
 
 function line(x1, y1, x2, y2) {
   ctx.beginPath();
@@ -30,81 +30,58 @@ function drawTerrain() {
   }
 }
 
-function drawStickPerson() {
-  const x = worldToScreenX(player.x);
-  const y = player.y;
-  const ducking = isDucking();
-  const stride = Math.sin(performance.now() / 90) * (Math.abs(player.vx) / 360);
-  const fade = player.invulnerableFor > 0 && Math.floor(performance.now() / 90) % 2 === 0;
-  if (fade) return;
-
-  ctx.lineWidth = 3;
-  if (ducking) {
-    ctx.beginPath();
-    ctx.arc(x, y - 43, 10, 0, Math.PI * 2);
-    ctx.stroke();
-    if (powerUps.specs) {
-      line(x - 8, y - 44, x - 2, y - 44);
-      line(x + 2, y - 44, x + 8, y - 44);
-    }
-    line(x, y - 33, x - 5 * player.facing, y - 18);
-    line(x - 5 * player.facing, y - 18, x + 22 * player.facing, y - 24);
-    line(x - 5 * player.facing, y - 18, x - 20, y);
-    line(x - 5 * player.facing, y - 18, x + 18, y);
-    drawBoots(x, y, true);
-
-    ctx.font = "22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    ctx.fillText("*", x + player.facing * 26, y - 20);
-    return;
-  }
-
-  ctx.beginPath();
-  ctx.arc(x, y - 62, 10, 0, Math.PI * 2);
-  ctx.stroke();
-  if (powerUps.specs) {
-    line(x - 8, y - 63, x - 2, y - 63);
-    line(x + 2, y - 63, x + 8, y - 63);
-  }
-  line(x, y - 52, x, y - 24);
-  line(x, y - 43, x - 17 * player.facing, y - 34 + stride * 3);
-  line(x, y - 43, x + 22 * player.facing, y - 38 - stride * 3);
-  line(x, y - 24, x - 14, y);
-  line(x, y - 24, x + 16, y - Math.abs(stride) * 8);
-  drawBoots(x, y, false);
-
-  ctx.font = "22px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText("*", x + player.facing * 24, y - 38);
-}
-
-function drawBoots(x, y, ducking) {
-  if (!powerUps.boots) return;
-  if (ducking) {
-    ctx.fillRect(x - 28, y - 8, 14, 8);
-    ctx.fillRect(x + 12, y - 8, 14, 8);
-    return;
-  }
-  ctx.fillRect(x - 22, y - 8, 14, 8);
-  ctx.fillRect(x + 10, y - 8, 14, 8);
-}
-
 function drawEnemy(enemy) {
   if (!enemy.alive) return;
   const x = worldToScreenX(enemy.x);
   if (x < -60 || x > window.innerWidth + 60) return;
 
   ctx.lineWidth = 3;
+  if (enemy.family === "triangle") {
+    drawTriangleEnemy(enemy, x);
+  } else if (enemy.family === "square") {
+    drawSquareEnemy(enemy, x);
+  } else {
+    drawCircleEnemy(enemy, x);
+  }
+
+  if (enemy.movement === "runner") {
+    line(x - enemy.radius - 8, enemy.y + enemy.radius + 4, x + enemy.radius + 8, enemy.y + enemy.radius + 4);
+  }
+
+  if (enemy.movement === "hopper") {
+    line(x - 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
+    line(x + 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
+  }
+}
+
+function drawCircleEnemy(enemy, x) {
   ctx.beginPath();
   ctx.arc(x, enemy.y, enemy.radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  if (enemy.type === "runner") {
-    line(x - enemy.radius - 8, enemy.y + enemy.radius + 4, x + enemy.radius + 8, enemy.y + enemy.radius + 4);
-  }
+  line(x - 8, enemy.y - 5, x - 2, enemy.y - 5);
+  line(x + 2, enemy.y - 5, x + 8, enemy.y - 5);
+}
 
-  if (enemy.type === "hopper") {
-    line(x - 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
-    line(x + 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
-  }
+function drawTriangleEnemy(enemy, x) {
+  ctx.beginPath();
+  ctx.moveTo(x, enemy.y - enemy.radius);
+  ctx.lineTo(x - enemy.radius, enemy.y + enemy.radius);
+  ctx.lineTo(x + enemy.radius, enemy.y + enemy.radius);
+  ctx.closePath();
+  ctx.stroke();
+
+  line(x - 8, enemy.y + 3, x - 2, enemy.y + 3);
+  line(x + 2, enemy.y + 3, x + 8, enemy.y + 3);
+}
+
+function drawSquareEnemy(enemy, x) {
+  const size = enemy.radius * 2;
+  ctx.strokeRect(x - enemy.radius, enemy.y - enemy.radius, size, size);
+  const shieldX = x + enemy.facing * (enemy.radius + 8);
+  line(shieldX, enemy.y - enemy.radius, shieldX, enemy.y + enemy.radius);
+  line(shieldX, enemy.y - enemy.radius, shieldX + enemy.facing * 8, enemy.y - enemy.radius + 6);
+  line(shieldX, enemy.y + enemy.radius, shieldX + enemy.facing * 8, enemy.y + enemy.radius - 6);
 
   line(x - 8, enemy.y - 5, x - 2, enemy.y - 5);
   line(x + 2, enemy.y - 5, x + 8, enemy.y - 5);
@@ -284,13 +261,18 @@ function drawCustomizeScreen() {
   drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
   drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
   drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
+  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 126);
 
-  drawSplitButtons("SAVE", "CANCEL", Math.max(340, startY + 156));
+  drawSplitButtons("SAVE", "CANCEL", Math.max(382, startY + 198));
 
   ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textAlign = "center";
-  ctx.fillText("Use arrows to select. Type text. +/- changes power-ups. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(420, startY + 224));
+  ctx.fillText("Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(462, startY + 266));
   ctx.textAlign = "left";
+}
+
+function playerTypeLabel(playerType) {
+  return playerType === "croc" ? "Croc" : "Original";
 }
 
 function drawSplitButtons(leftLabel, rightLabel, y) {
@@ -350,7 +332,7 @@ export function draw() {
     line(x, particle.y - 3, x, particle.y + 3);
   }
 
-  drawStickPerson();
+  drawPlayerCharacter();
   drawUi();
   drawCollectionNotice();
   drawScreenOverlay();

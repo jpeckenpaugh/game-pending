@@ -33,6 +33,15 @@ function update(dt) {
     if (!enemy.alive) continue;
 
     if (canStomp(enemy)) {
+      if (enemy.family === "triangle") {
+        player.vy = -jumpImpulse() * 0.35;
+        player.onGround = false;
+        absorbOrTakeHit(showGameOver);
+        game.message = "Pointy!";
+        game.messageTimer = 1;
+        continue;
+      }
+
       defeatEnemy(enemy);
       player.vy = -jumpImpulse() * 0.6;
       player.onGround = false;

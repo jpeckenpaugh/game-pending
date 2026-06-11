@@ -2,7 +2,7 @@ import { game, keys, states, touches } from "./state.js";
 import { beginNewGame, continueToNextLevel, pauseGame, resumeGame, returnToTitle } from "./level.js";
 import { grantPowerUpWithFeedback } from "./powerups.js";
 import { shoot } from "./projectiles.js";
-import { cancelCustomize, customizeActionAt, handleCustomizeKey, openCustomize, saveCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
+import { cancelCustomize, customizeActionAt, cyclePlayerType, handleCustomizeKey, openCustomize, saveCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
 
 export function setupInput(canvas) {
   window.addEventListener("keydown", (event) => {
@@ -102,6 +102,7 @@ function handleMenuAction(x, y) {
     }
     if (action) {
       selectCustomizeField(action);
+      if (action === "playerType") cyclePlayerType();
       return true;
     }
     return false;
