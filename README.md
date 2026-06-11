@@ -28,7 +28,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 - `G`: grant a random power-up while playing
 - `R`: restart while playing
 
-Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, and player character.
+Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, player character, and weapon.
 
 ## Project Structure
 
@@ -37,6 +37,7 @@ Menus support Up / Down / Left / Right / Enter. The Customize menu can change th
 - `src/state.js`: shared mutable game state
 - `src/render.js`: terrain, enemies, UI, menus, and overall draw order
 - `src/playerCharacters.js`: selectable player renderers, including Original and Croc
+- `src/weapons.js`: selectable weapon renderers, including Gun, Club, and Wand
 - `src/player.js`: player movement, jumping, ducking, and stomp checks
 - `src/enemies.js`: enemy creation and behavior
 - `src/projectiles.js`: player shots, homing shots, and shield collisions

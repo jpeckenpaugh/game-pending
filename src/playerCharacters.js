@@ -1,6 +1,7 @@
 import { ctx, customization, player, powerUps } from "./state.js";
 import { isDucking } from "./player.js";
 import { worldToScreenX } from "./terrain.js";
+import { drawWeapon } from "./weapons.js";
 
 function line(x1, y1, x2, y2) {
   ctx.beginPath();
@@ -38,11 +39,13 @@ function drawOriginalPlayer() {
       line(x + 2, y - 44, x + 8, y - 44);
     }
     line(x, y - 33, x - 5 * player.facing, y - 18);
-    line(x - 5 * player.facing, y - 18, x + 22 * player.facing, y - 24);
+    const weaponX = x + 22 * player.facing;
+    const weaponY = y - 24;
+    line(x - 5 * player.facing, y - 18, weaponX, weaponY);
     line(x - 5 * player.facing, y - 18, x - 20, y);
     line(x - 5 * player.facing, y - 18, x + 18, y);
     drawBoots(x, y, true);
-    drawGun(x + player.facing * 24, y - 25, player.facing);
+    drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, 1);
     return;
   }
 
@@ -55,17 +58,13 @@ function drawOriginalPlayer() {
   }
   line(x, y - 52, x, y - 24);
   line(x, y - 43, x - 17 * player.facing, y - 34 + stride * 3);
-  line(x, y - 43, x + 22 * player.facing, y - 38 - stride * 3);
+  const weaponX = x + 22 * player.facing;
+  const weaponY = y - 38 - stride * 3;
+  line(x, y - 43, weaponX, weaponY);
   line(x, y - 24, x - 14, y);
   line(x, y - 24, x + 16, y - Math.abs(stride) * 8);
   drawBoots(x, y, false);
-  drawGun(x + player.facing * 23, y - 43, player.facing);
-}
-
-function drawGun(x, y, facing) {
-  ctx.fillRect(x - 4, y - 3, 10, 8);
-  const barrelX = facing === 1 ? x + 2 : x - 16;
-  ctx.fillRect(barrelX, y - 8, 14, 5);
+  drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, 1);
 }
 
 function drawBoots(x, y, ducking) {
@@ -95,6 +94,10 @@ function drawCrocPlayer() {
   ctx.lineWidth = 6;
   drawCrocBody();
   ctx.restore();
+
+  const handX = x + mirror * scale * (62 - 156);
+  const handY = y + scale * yScale * (190 - 300);
+  drawWeapon(customization.weaponType, handX, handY, player.facing, 1.35);
 }
 
 function drawCrocBody() {
@@ -119,13 +122,6 @@ function drawCrocBody() {
   path("M156 156 L206 194 L222 238");
   path("M156 206 L104 260 L102 286");
   path("M156 206 L126 274 L148 292");
-
-  ctx.save();
-  ctx.translate(62, 190);
-  ctx.scale(0.5, 0.5);
-  ctx.translate(-62, -190);
-  path("M62 190 L18 82 Q12 68 26 66 Q36 66 44 82 L78 210 Q82 222 70 224 Q62 224 58 214 Z");
-  ctx.restore();
 
   filledTriangle(160, 206, 178, 198, 174, 218);
   filledTriangle(184, 224, 202, 216, 198, 238);

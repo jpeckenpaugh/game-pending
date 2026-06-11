@@ -16,6 +16,7 @@ Keep new behavior in the closest existing module:
 
 - Rendering and menus: `src/render.js`
 - Selectable player art: `src/playerCharacters.js`
+- Selectable weapon art: `src/weapons.js`
 - Movement and stomp rules: `src/player.js`
 - Enemy spawning/AI: `src/enemies.js`
 - Projectiles and shot collisions: `src/projectiles.js`

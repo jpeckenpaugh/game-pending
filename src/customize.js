@@ -1,10 +1,11 @@
 import { customization, game, states } from "./state.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps", "playerType", "save", "cancel"];
-const customizeRows = ["name", "tagline", "startingPowerUps", "playerType"];
+export const customizeFields = ["name", "tagline", "startingPowerUps", "playerType", "weaponType", "save", "cancel"];
+const customizeRows = ["name", "tagline", "startingPowerUps", "playerType", "weaponType"];
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
 const playerTypes = ["original", "croc"];
+const weaponTypes = ["gun", "club", "wand"];
 
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
@@ -14,6 +15,7 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedTagline = customization.tagline;
   customization.savedStartingPowerUps = customization.startingPowerUps;
   customization.savedPlayerType = customization.playerType;
+  customization.savedWeaponType = customization.weaponType;
 }
 
 export function saveCustomize() {
@@ -25,6 +27,7 @@ export function cancelCustomize() {
   customization.tagline = customization.savedTagline;
   customization.startingPowerUps = customization.savedStartingPowerUps;
   customization.playerType = customization.savedPlayerType;
+  customization.weaponType = customization.savedWeaponType;
   game.state = customization.returnState;
 }
 
@@ -49,7 +52,7 @@ export function customizeActionAt(x, y) {
     if (inside(x, y, row)) return customizeRows[i];
   }
 
-  const buttonY = Math.max(382, startY + 198);
+  const buttonY = Math.max(424, startY + 240);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -120,13 +123,13 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
-  if (customization.selectedField === "playerType") {
+  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType") {
     if (lower === "arrowleft") {
-      selectRelativePlayerType(-1);
+      selectRelativeOption(customization.selectedField, -1);
       return true;
     }
     if (lower === "arrowright" || lower === " ") {
-      selectRelativePlayerType(1);
+      selectRelativeOption(customization.selectedField, 1);
       return true;
     }
     return false;
@@ -151,8 +154,8 @@ export function selectCustomizeField(field) {
   if (customizeFields.includes(field)) customization.selectedField = field;
 }
 
-export function cyclePlayerType(offset = 1) {
-  selectRelativePlayerType(offset);
+export function cycleCustomizeOption(field, offset = 1) {
+  selectRelativeOption(field, offset);
 }
 
 function selectRelativeField(offset) {
@@ -161,10 +164,16 @@ function selectRelativeField(offset) {
   customization.selectedField = customizeFields[next];
 }
 
-function selectRelativePlayerType(offset) {
-  const index = playerTypes.indexOf(customization.playerType);
-  const next = (index + offset + playerTypes.length) % playerTypes.length;
-  customization.playerType = playerTypes[next];
+function selectRelativeOption(field, offset) {
+  const options = field === "weaponType" ? weaponTypes : playerTypes;
+  const current = field === "weaponType" ? customization.weaponType : customization.playerType;
+  const index = options.indexOf(current);
+  const next = (index + offset + options.length) % options.length;
+  if (field === "weaponType") {
+    customization.weaponType = options[next];
+  } else {
+    customization.playerType = options[next];
+  }
 }
 
 function getSelectedText() {

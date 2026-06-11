@@ -262,17 +262,24 @@ function drawCustomizeScreen() {
   drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
   drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
   drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 126);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 168);
 
-  drawSplitButtons("SAVE", "CANCEL", Math.max(382, startY + 198));
+  drawSplitButtons("SAVE", "CANCEL", Math.max(424, startY + 240));
 
   ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textAlign = "center";
-  ctx.fillText("Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(462, startY + 266));
+  ctx.fillText("Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(504, startY + 308));
   ctx.textAlign = "left";
 }
 
 function playerTypeLabel(playerType) {
   return playerType === "croc" ? "Croc" : "Original";
+}
+
+function weaponTypeLabel(weaponType) {
+  if (weaponType === "club") return "Club";
+  if (weaponType === "wand") return "Wand";
+  return "Gun";
 }
 
 function drawSplitButtons(leftLabel, rightLabel, y) {
