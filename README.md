@@ -1,4 +1,4 @@
-# Side Scroller
+# Game Pending
 
 A small black-and-white HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules. There is no build step and no package dependency required for normal development.
 
