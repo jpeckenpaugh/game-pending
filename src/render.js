@@ -2,6 +2,7 @@ import { camera, ctx, customization, drone, drops, enemies, game, particles, pla
 import { groundAt, worldToScreenX } from "./terrain.js";
 import { powerUpSummary } from "./powerups.js";
 import { drawPlayerCharacter } from "./playerCharacters.js";
+import { drawWeapon } from "./weapons.js";
 
 function line(x1, y1, x2, y2) {
   ctx.beginPath();
@@ -100,12 +101,16 @@ function drawDrop(drop) {
 
 function drawProjectile(projectile) {
   const x = worldToScreenX(projectile.x);
-  if (x < -20 || x > window.innerWidth + 20) return;
+  if (x < -80 || x > window.innerWidth + 80) return;
   if (projectile.homing) {
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(x, projectile.y, 5, 0, Math.PI * 2);
     ctx.stroke();
+  } else if (projectile.weaponType === "club") {
+    drawWeapon("club", x, projectile.y, projectile.vx >= 0 ? 1 : -1, 1, projectile.rotation || 0);
+  } else if (projectile.weaponType === "gun") {
+    ctx.fillRect(x - 8, projectile.y - 1, 16, 2);
   } else {
     ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
     ctx.fillText("*", x - 8, projectile.y + 8);

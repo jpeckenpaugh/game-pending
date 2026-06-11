@@ -1,9 +1,10 @@
 import { ctx } from "./state.js";
 
-export function drawWeapon(type, x, y, facing, scale = 1) {
+export function drawWeapon(type, x, y, facing, scale = 1, rotation = 0) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(facing * scale, scale);
+  ctx.rotate(rotation);
   if (type === "club") {
     drawClub();
   } else if (type === "wand") {

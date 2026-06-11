@@ -1,14 +1,16 @@
-import { enemies, game, player, powerUps, projectiles, states, world } from "./state.js";
+import { customization, enemies, game, player, powerUps, projectiles, states, world } from "./state.js";
 import { nearestEnemy } from "./targeting.js";
 import { isDucking } from "./player.js";
 import { defeatEnemy } from "./enemies.js";
+import { groundAt } from "./terrain.js";
 
 export function shoot() {
   if (game.state !== states.PLAYING || player.shootCooldown > 0 || player.ammo <= 0) return;
 
   const ducking = isDucking();
   const shotY = player.y - (ducking ? 28 : 48);
-  const velocity = shotVelocity(shotY);
+  const weaponType = customization.weaponType;
+  const velocity = shotVelocity(shotY, weaponType);
   player.ammo -= 1;
   player.shootCooldown = 0.18;
   projectiles.push({
@@ -16,7 +18,12 @@ export function shoot() {
     y: shotY,
     vx: velocity.vx,
     vy: velocity.vy,
-    life: 1.7,
+    weaponType,
+    gravity: weaponType === "club" ? world.gravity * 0.18 : 0,
+    rotation: 0,
+    hitEnemies: weaponType === "club" ? new Set() : null,
+    life: projectileLife(weaponType),
+    radius: projectileRadius(weaponType),
   });
 
   if (player.ammo === 0) {
@@ -25,8 +32,10 @@ export function shoot() {
   }
 }
 
-function shotVelocity(shotY) {
-  const speed = 760;
+function shotVelocity(shotY, weaponType) {
+  if (weaponType === "club") return clubVelocity(shotY);
+
+  const speed = weaponType === "gun" ? 3040 : 760;
   const target = powerUps.specs ? nearestEnemy(player.x, shotY) : null;
   if (!target) return { vx: player.facing * speed, vy: 0 };
 
@@ -37,31 +46,88 @@ function shotVelocity(shotY) {
   return { vx: (dx / distance) * speed, vy: (dy / distance) * speed };
 }
 
+function clubVelocity(shotY) {
+  const target = powerUps.specs ? nearestEnemy(player.x, shotY) : null;
+  if (target) player.facing = target.x >= player.x ? 1 : -1;
+  return { vx: player.facing * 700, vy: -90 };
+}
+
+function projectileLife(weaponType) {
+  if (weaponType === "gun") return null;
+  return weaponType === "club" ? 3 : 1.7;
+}
+
+function projectileRadius(weaponType) {
+  if (weaponType === "club") return 15;
+  if (weaponType === "gun") return 4;
+  return 7;
+}
+
 export function updateProjectiles(dt) {
   for (let i = projectiles.length - 1; i >= 0; i -= 1) {
     const projectile = projectiles[i];
+    projectile.weaponType ||= "wand";
+    projectile.radius ??= 7;
+    projectile.rotation ??= 0;
+
     updateHomingProjectile(projectile);
+    projectile.previousX = projectile.x;
+    projectile.previousY = projectile.y;
+    projectile.vy += (projectile.gravity || 0) * dt;
     projectile.x += projectile.vx * dt;
     projectile.y += projectile.vy * dt;
-    projectile.life -= dt;
+    if (projectile.weaponType === "club") {
+      projectile.rotation += Math.sign(projectile.vx || player.facing) * dt * 12;
+    }
+    if (projectile.life != null) projectile.life -= dt;
 
-    if (projectile.life <= 0 || projectile.x < 0 || projectile.x > world.width) {
+    if (isExpired(projectile)) {
       projectiles.splice(i, 1);
       continue;
     }
 
-    for (const enemy of enemies) {
-      if (!enemy.alive || Math.hypot(projectile.x - enemy.x, projectile.y - enemy.y) > enemy.radius + 7) continue;
-      projectiles.splice(i, 1);
+    for (let enemyIndex = 0; enemyIndex < enemies.length; enemyIndex += 1) {
+      const enemy = enemies[enemyIndex];
+      if (projectile.hitEnemies?.has(enemyIndex)) continue;
+      if (!enemy.alive || projectileDistanceToEnemy(projectile, enemy) > enemy.radius + projectile.radius) continue;
       if (blocksProjectile(enemy, projectile)) {
         game.message = "Blocked!";
         game.messageTimer = 0.8;
+        if (projectile.weaponType !== "club") projectiles.splice(i, 1);
         break;
       }
       defeatEnemy(enemy);
+      if (projectile.weaponType === "club") {
+        projectile.hitEnemies.add(enemyIndex);
+        continue;
+      }
+      projectiles.splice(i, 1);
       break;
     }
   }
+}
+
+function projectileDistanceToEnemy(projectile, enemy) {
+  const x1 = projectile.previousX ?? projectile.x;
+  const y1 = projectile.previousY ?? projectile.y;
+  const x2 = projectile.x;
+  const y2 = projectile.y;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return Math.hypot(enemy.x - x2, enemy.y - y2);
+
+  const t = Math.max(0, Math.min(1, ((enemy.x - x1) * dx + (enemy.y - y1) * dy) / lengthSquared));
+  const closestX = x1 + dx * t;
+  const closestY = y1 + dy * t;
+  return Math.hypot(enemy.x - closestX, enemy.y - closestY);
+}
+
+function isExpired(projectile) {
+  if (projectile.life != null && projectile.life <= 0) return true;
+  if (projectile.x < -80 || projectile.x > world.width + 80) return true;
+  if (projectile.weaponType === "club" && projectile.y >= groundAt(projectile.x)) return true;
+  return projectile.y > world.baseGroundY + 220;
 }
 
 function blocksProjectile(enemy, projectile) {
