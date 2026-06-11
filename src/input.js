@@ -2,10 +2,17 @@ import { game, keys, states, touches } from "./state.js";
 import { activateCurrentScreen, beginNewGame } from "./level.js";
 import { grantPowerUpWithFeedback } from "./powerups.js";
 import { shoot } from "./projectiles.js";
+import { closeCustomize, customizeActionAt, handleCustomizeKey, openCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
 
 export function setupInput(canvas) {
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
+    if (game.state === states.CUSTOMIZE) {
+      event.preventDefault();
+      handleCustomizeKey(event);
+      return;
+    }
+
     if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "s", "w", "r"].includes(key)) {
       event.preventDefault();
     }
@@ -67,6 +74,32 @@ function touchZone(touch) {
 
 function handleMenuAction(x, y) {
   if (game.state === states.PLAYING) return false;
+
+  if (game.state === states.TITLE) {
+    const action = titleButtonAt(x, y);
+    if (action === "newGame") {
+      beginNewGame();
+      return true;
+    }
+    if (action === "customize") {
+      openCustomize();
+      return true;
+    }
+    return false;
+  }
+
+  if (game.state === states.CUSTOMIZE) {
+    const action = customizeActionAt(x, y);
+    if (action === "back") {
+      closeCustomize();
+      return true;
+    }
+    if (action) {
+      selectCustomizeField(action);
+      return true;
+    }
+    return false;
+  }
 
   const buttonWidth = Math.min(260, window.innerWidth - 48);
   const buttonX = (window.innerWidth - buttonWidth) / 2;

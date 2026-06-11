@@ -62,10 +62,18 @@ export const powerUpPool = ["boots", "vest", "specs", "drone"];
 
 export const states = {
   TITLE: "title",
+  CUSTOMIZE: "customize",
   PLAYING: "playing",
   LEVEL_COMPLETE: "levelComplete",
   GAME_OVER: "gameOver",
   LEVEL_COLLECTING: "levelCollecting",
+};
+
+export const customization = {
+  name: "Game Pending",
+  tagline: "Name Pending",
+  startingPowerUps: 0,
+  selectedField: "name",
 };
 
 export const game = {

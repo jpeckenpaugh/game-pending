@@ -1,4 +1,4 @@
-import { camera, canvas, ctx, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
+import { camera, ctx, customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { groundAt, worldToScreenX } from "./terrain.js";
 import { isDucking } from "./player.js";
 import { powerUpSummary } from "./powerups.js";
@@ -221,13 +221,18 @@ function drawScreenOverlay() {
 
   if (game.state === states.TITLE) {
     drawCenteredText([
-      { text: "LINE RUNNER", font: "36px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 46 },
-      { text: "Stick figure vs. circle patrols", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
+      { text: customization.name || "Game Pending", font: "36px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 46 },
+      { text: customization.tagline || "Name Pending", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
     ], Math.max(112, window.innerHeight * 0.24));
     drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46));
+    drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62));
     drawCenteredText([
       { text: "Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space", font: "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 24 },
-    ], Math.max(300, window.innerHeight * 0.46 + 86));
+    ], Math.max(366, window.innerHeight * 0.46 + 148));
+  }
+
+  if (game.state === states.CUSTOMIZE) {
+    drawCustomizeScreen();
   }
 
   if (game.state === states.LEVEL_COMPLETE) {
@@ -247,6 +252,36 @@ function drawScreenOverlay() {
     ], Math.max(132, window.innerHeight * 0.3));
     drawButton("NEW GAME", Math.max(250, window.innerHeight * 0.54));
   }
+}
+
+function drawCustomizeScreen() {
+  drawCenteredText([
+    { text: "CUSTOMIZE", font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
+    { text: "Blank canvas settings", font: "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 28 },
+  ], Math.max(90, window.innerHeight * 0.18));
+
+  const startY = Math.max(170, window.innerHeight * 0.28);
+  drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
+  drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
+  drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
+
+  drawButton("BACK", Math.max(340, startY + 156));
+
+  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("Click a row. Type to edit text. Use +/- or arrows for power-ups. Esc returns.", window.innerWidth / 2, Math.max(420, startY + 224));
+  ctx.textAlign = "left";
+}
+
+function drawCustomizeRow(field, label, value, y) {
+  const width = Math.min(520, window.innerWidth - 48);
+  const x = Math.max(24, window.innerWidth * 0.5 - 260);
+  const selected = customization.selectedField === field;
+
+  ctx.lineWidth = selected ? 3 : 1;
+  ctx.strokeRect(x, y, width, 32);
+  ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText(`${label}: ${value}`, x + 12, y + 21);
 }
 
 function drawCollectionNotice() {

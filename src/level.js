@@ -1,4 +1,4 @@
-import { camera, drone, drops, enemies, game, particles, player, projectiles, states, world } from "./state.js";
+import { camera, customization, drone, drops, enemies, game, particles, player, projectiles, states, world } from "./state.js";
 import { buildTerrain, groundAt } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
 import { grantRandomPowerUp, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
@@ -36,6 +36,9 @@ export function startLevel(nextLevel) {
 export function beginNewGame() {
   resetPowerUps();
   player.ammo = 10;
+  for (let i = 0; i < customization.startingPowerUps; i += 1) {
+    grantRandomPowerUp();
+  }
   startLevel(1);
   game.state = states.PLAYING;
 }
