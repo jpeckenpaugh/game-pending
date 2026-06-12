@@ -77,15 +77,31 @@ function drawLadders() {
 
 function drawTeleports() {
   ctx.lineWidth = strokeWidth(3);
+  const time = performance.now() / 900;
   for (const teleport of world.teleports) {
     const x = worldToScreenX(teleport.x);
     const y = worldToScreenY(teleport.y);
     if (x < -80 || x > window.innerWidth + 80) continue;
+    const centerY = y + z(teleport.height / 2);
+    const radiusX = z(teleport.width / 2);
+    const radiusY = z(teleport.height / 2);
+
     ctx.beginPath();
-    ctx.ellipse(x, y + z(teleport.height / 2), z(teleport.width / 2), z(teleport.height / 2), 0, 0, Math.PI * 2);
+    ctx.ellipse(x, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.stroke();
-    line(x - z(12), y + z(20), x + z(12), y + z(teleport.height - 20));
-    line(x + z(12), y + z(20), x - z(12), y + z(teleport.height - 20));
+
+    const previousAlpha = ctx.globalAlpha;
+    ctx.lineWidth = strokeWidth(2);
+    for (let i = 0; i < 5; i += 1) {
+      const progress = (time + i / 5) % 1;
+      const scale = 0.86 - progress * 0.68;
+      ctx.globalAlpha = previousAlpha * Math.max(0.08, scale * 0.85);
+      ctx.beginPath();
+      ctx.ellipse(x, centerY, radiusX * scale, radiusY * scale, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = previousAlpha;
+    ctx.lineWidth = strokeWidth(3);
   }
 }
 
@@ -409,31 +425,6 @@ function drawCollectionNotice() {
   ctx.textAlign = "left";
 }
 
-function drawWrapEffect() {
-  if (game.wrapTimer <= 0 && game.teleportPhase === "idle") return;
-  const progress = Math.max(0, Math.min(1, game.wrapTimer / 0.36));
-  ctx.lineWidth = strokeWidth(2 + progress * 3);
-  const points = game.teleportPhase === "zoomOut"
-    ? [{ x: game.wrapFromX, y: game.wrapFromY }]
-    : game.teleportPhase === "pan"
-      ? []
-      : game.teleportPhase === "zoomIn"
-        ? [{ x: game.wrapToX, y: game.wrapToY }]
-        : [
-          { x: game.wrapFromX, y: game.wrapFromY },
-          { x: game.wrapToX, y: game.wrapToY },
-        ];
-  for (const point of points) {
-    const x = worldToScreenX(point.x);
-    const y = worldToScreenY(point.y);
-    ctx.beginPath();
-    ctx.arc(x, y, z(14 + (1 - progress) * 28), 0, Math.PI * 2);
-    ctx.stroke();
-    line(x - z(18), y, x + z(18), y);
-    line(x, y - z(18), x, y + z(18));
-  }
-}
-
 export function draw() {
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   ctx.strokeStyle = "#000";
@@ -447,7 +438,6 @@ export function draw() {
   for (const projectile of projectiles) drawProjectile(projectile);
   for (const enemy of enemies) drawEnemy(enemy);
   drawDrone();
-  drawWrapEffect();
 
   for (const particle of particles) {
     const x = worldToScreenX(particle.x);

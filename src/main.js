@@ -94,7 +94,7 @@ function updateTeleport(dt) {
   if (game.teleportPhase === "zoomOut") {
     game.teleportPhase = "pan";
     game.teleportTimer = 0;
-    game.teleportDuration = 0.5;
+    game.teleportDuration = 0.7;
     return;
   }
 
@@ -111,7 +111,7 @@ function updateTeleport(dt) {
     game.wrapTimer = 0.36;
     game.teleportPhase = "zoomIn";
     game.teleportTimer = 0;
-    game.teleportDuration = 0.46;
+    game.teleportDuration = 0.85;
     return;
   }
 

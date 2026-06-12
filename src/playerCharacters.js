@@ -1,4 +1,4 @@
-import { camera, ctx, customization, game, player, powerUps } from "./state.js";
+import { camera, ctx, customization, game, player, powerUps, world } from "./state.js";
 import { isDucking } from "./player.js";
 import { worldToScreenX, worldToScreenY } from "./terrain.js";
 import { drawWeapon } from "./weapons.js";
@@ -20,14 +20,76 @@ function strokeWidth(value) {
 
 export function drawPlayerCharacter() {
   if (game.teleportPhase === "pan") return;
+  const effect = teleportPlayerEffect();
+  if (effect) {
+    const baseOriginX = worldToScreenX(player.x);
+    const baseOriginY = worldToScreenY(player.y - player.height * 0.45);
+    const originX = baseOriginX + effect.offsetX;
+    const originY = baseOriginY + effect.offsetY;
+    ctx.save();
+    ctx.globalAlpha *= effect.alpha;
+    ctx.translate(originX, originY);
+    ctx.rotate(effect.rotation);
+    ctx.scale(effect.scale, effect.scale);
+    ctx.translate(-baseOriginX, -baseOriginY);
+  }
+
   if (customization.playerType === "croc") {
     drawCrocPlayer();
+    if (effect) ctx.restore();
     return;
   }
   drawOriginalPlayer();
+  if (effect) ctx.restore();
+}
+
+function teleportPlayerEffect() {
+  if (game.teleportPhase !== "zoomOut" && game.teleportPhase !== "zoomIn") return null;
+  const rawProgress = game.teleportDuration > 0
+    ? Math.max(0, Math.min(1, game.teleportTimer / game.teleportDuration))
+    : 1;
+  const progress = rawProgress * rawProgress * (3 - 2 * rawProgress);
+  const spin = Math.PI * 4;
+  const bodyX = player.x;
+  const bodyY = player.y - player.height * 0.45;
+  const portal = nearestTeleportCenter(game.teleportPhase === "zoomOut" ? game.teleportFromX : game.teleportToX);
+  const portalOffsetX = portal ? worldToScreenX(portal.x) - worldToScreenX(bodyX) : 0;
+  const portalOffsetY = portal ? worldToScreenY(portal.y) - worldToScreenY(bodyY) : 0;
+
+  if (game.teleportPhase === "zoomOut") {
+    return {
+      alpha: 1 - progress * 0.92,
+      offsetX: portalOffsetX * progress,
+      offsetY: portalOffsetY * progress,
+      rotation: spin * progress,
+      scale: 1 - progress * 0.86,
+    };
+  }
+
+  return {
+    alpha: 0.08 + progress * 0.92,
+    offsetX: portalOffsetX * (1 - progress),
+    offsetY: portalOffsetY * (1 - progress),
+    rotation: -spin * (1 - progress),
+    scale: 0.14 + progress * 0.86,
+  };
+}
+
+function nearestTeleportCenter(x) {
+  let nearest = null;
+  let nearestDistance = Infinity;
+  for (const teleport of world.teleports) {
+    const distance = Math.abs(teleport.x - x);
+    if (distance < nearestDistance) {
+      nearest = teleport;
+      nearestDistance = distance;
+    }
+  }
+  return nearest ? { x: nearest.x, y: nearest.y + nearest.height / 2 } : null;
 }
 
 function shouldBlinkOut() {
+  if (game.teleportPhase !== "idle") return false;
   return player.invulnerableFor > 0 && Math.floor(performance.now() / 90) % 2 === 0;
 }
 

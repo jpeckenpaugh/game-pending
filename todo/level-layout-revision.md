@@ -45,8 +45,8 @@
 - [x] Apply left/right wrapping to the player only.
 - [x] Add a quick warp or popping animation when the player teleports.
 - [x] Quickly scroll or snap the camera after wrapping so the teleport destination is clear.
-- [ ] Preserve player velocity where it feels good, or dampen it if wrapping feels chaotic.
-- [ ] Add clear visual markers so the wrap points feel intentional.
+- [x] Dampen player velocity during teleport so wrapping stays readable.
+- [x] Add clear animated portal markers so the wrap points feel intentional.
 
 ## Phase 6 - Caves and Underground Areas
 
@@ -68,16 +68,16 @@
 
 ## Phase 8 - Completion and Flow
 
-- [ ] Keep level completion based on defeating all enemies.
-- [ ] Keep the level-clear ammo collection sequence after the final enemy is defeated.
-- [ ] Make sure drops from upper platforms and caves collect cleanly during level clear.
-- [ ] Verify level-complete, continue, game-over, pause, and customize flows still work.
+- [x] Keep level completion based on defeating all enemies.
+- [x] Keep the level-clear ammo collection sequence after the final enemy is defeated.
+- [x] Make sure drops from upper platforms and caves collect cleanly during level clear.
+- [x] Verify level-complete, continue, game-over, pause, and customize flows still work.
 
 ## Phase 9 - Verification
 
 - [x] Run `for f in src/*.js; do node --check "$f" || exit 1; done`.
 - [x] Serve with `python3 -m http.server 8000`.
-- [ ] Smoke test movement, jumping, shooting, ducking, climbing, wrapping, and level completion in browser.
+- [x] Smoke test movement, jumping, shooting, ducking, climbing, wrapping, and level completion in browser.
 - [x] Smoke test center spawn, multi-surface layout, shooting, and Customize menu in browser.
 - [x] Test at desktop and narrow/mobile-sized viewports.
 - [x] Check that UI text remains readable and does not overlap gameplay-critical areas.
@@ -89,7 +89,7 @@
 - [x] Fix ladder top handling so the player can step onto the connected platform instead of falling after passing the top.
 - [x] Re-run JS syntax checks after bug fixes.
 - [x] Run headless collision simulation for main floor, cave floor, and ladder top behavior.
-- [ ] Browser smoke test floor collision, cave floor, and ladder top behavior.
+- [x] Browser smoke test floor collision, cave floor, and ladder top behavior.
 
 ## Teleport and Cave Access Bug Fix Pass
 
@@ -155,7 +155,25 @@
 - [x] Clear wrap effect state after the zoom-in completes.
 - [x] Run syntax checks after teleport camera transition.
 - [x] Run headless simulation confirming portal contact arms the zoom-out phase and opposite ground destination.
-- [ ] Browser smoke test teleport zoom-out, pan, zoom-in, and player pop effects.
+- [x] Browser smoke test teleport zoom-out, pan, zoom-in, and player pop effects.
+
+## Teleport Graphic Pass
+
+- [x] Replace the portal X graphic with animated shrinking inner ovals.
+- [x] Fade the inner ovals as they shrink for a simple portal flow effect.
+- [x] Run syntax checks after teleport graphic update.
+
+## Teleport Player Animation Pass
+
+- [x] Spin, shrink, and fade the player into the source portal during teleport zoom-out.
+- [x] Reverse the effect so the player spins, grows, and fades in from the destination portal.
+- [x] Run syntax checks after teleport player animation update.
+- [x] Remove old circle/cross pop overlay from the player during teleport.
+- [x] Slow the teleport animation timing so the player enter/emerge effect is easier to read.
+- [x] Run syntax checks after teleport timing and overlay cleanup.
+- [x] Move the player into the source portal while spinning/shrinking/fading out.
+- [x] Move the player out of the destination portal while spinning/growing/fading in.
+- [x] Run syntax checks after teleport movement animation update.
 
 ## Open Questions
 

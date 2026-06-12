@@ -21,14 +21,14 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 ## Controls
 
 - `A` / `D` or Left / Right: move
-- `W` / Up: jump
-- `S` / Down: duck
+- `W` / Up: jump or climb up ladders
+- `S` / Down: duck, climb down ladders, or enter a ladder from above
 - Space: shoot
 - Enter: pause / activate menu selection
 - `G`: grant a random power-up while playing
 - `R`: restart while playing
 
-Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, player character, and weapon.
+Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, level, player character, weapon, and world generation mode (`Seeded` or `Random`).
 
 ## Project Structure
 
@@ -45,7 +45,7 @@ Menus support Up / Down / Left / Right / Enter. The Customize menu can change th
 - `src/drone.js`: drone power-up behavior
 - `src/customize.js`: Customize menu state and keyboard behavior
 - `src/input.js`: keyboard, mouse, touch, and menu input routing
-- `src/terrain.js`: ground generation and world/screen conversion
+- `src/terrain.js`: terrain, platforms, ladders, caves, teleports, world bounds, and world/screen conversion
 - `src/effects.js`: small visual effects
 - `src/targeting.js`: enemy targeting helpers
 

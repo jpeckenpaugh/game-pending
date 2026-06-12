@@ -24,6 +24,9 @@ Keep new behavior in the closest existing module:
 - Drone-specific behavior: `src/drone.js`
 - Customize menu logic: `src/customize.js`
 - Input routing: `src/input.js`
+- Terrain, platforms, ladders, caves, teleports, and coordinate conversion: `src/terrain.js`
+- Particles and burst effects: `src/effects.js`
+- Enemy targeting helpers: `src/targeting.js`
 - Shared state: `src/state.js`
 
 Avoid moving unrelated code while implementing a feature. The repo may already have user changes in progress, so inspect diffs before editing and do not revert unrelated modifications.

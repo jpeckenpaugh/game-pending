@@ -177,7 +177,7 @@ function wrapPlayerIfNeeded() {
   game.wrapToY = destinationY - player.height * 0.5;
   game.teleportPhase = "zoomOut";
   game.teleportTimer = 0;
-  game.teleportDuration = 0.42;
+  game.teleportDuration = 0.85;
   game.teleportFromX = player.x;
   game.teleportFromY = player.y;
   game.teleportToX = destinationX;
