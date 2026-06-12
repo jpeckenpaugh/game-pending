@@ -1,3 +1,5 @@
+// Owns player movement, collision with walkable surfaces/ladders, jump buffering,
+// stomp checks, teleport triggering, and Boots glide movement.
 import { game, keys, player, powerUps, states, touches, world } from "./state.js";
 import { groundAt, ladderAt, ladderEntryAt, ladderExitSurfaceAt, landingSurfaceAt, oppositeTeleport, teleportAt } from "./terrain.js";
 import { bootsGlideMax, primaryPowerLevel } from "./powerups.js";
@@ -135,6 +137,8 @@ export function applyPlayerMovement(dt, groundAt) {
     }
   }
 
+  // Glide is computed after jump handling so holding X cannot flatten a newly
+  // triggered ground or mid-air jump.
   const gliding = canRocketGlide();
   const maxSpeed = gliding ? 430 : ducking ? 145 : 360;
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
@@ -179,6 +183,7 @@ export function applyPlayerMovement(dt, groundAt) {
 function canRocketGlide() {
   if (bootsGlideMax() <= 0 || powerUps.bootsGlideCharge <= 0) return false;
   if (player.onGround || player.climbing) return false;
+  // Wait until the current jump reaches apex before held X becomes glide.
   if (player.vy < 0) return false;
   return jumpHeld();
 }

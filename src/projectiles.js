@@ -1,3 +1,5 @@
+// Owns player-fired projectiles, weapon aiming, projectile lifetime, and shot
+// collision with enemies. Drone missiles share the homing update path here.
 import { customization, enemies, game, keys, player, powerUps, projectiles, states, touches, world } from "./state.js";
 import { nearestEnemy } from "./targeting.js";
 import { isDucking } from "./player.js";
@@ -64,6 +66,8 @@ function velocityFromDirection(direction, speed) {
 }
 
 function weaponAimDirection() {
+  // Manual aim has priority over Specs auto-aim. This keeps Up/Down meaningful
+  // for all weapons now that jump is on X.
   const x = weaponAimHorizontalAxis();
   const y = weaponAimVerticalAxis();
   if (x === 0 && y === 0) return null;
@@ -193,6 +197,8 @@ function blocksProjectile(enemy, projectile) {
 
 export function updateHomingProjectile(projectile) {
   if (!projectile.homing) return;
+  // Homing shots retarget when their current target dies, which lets Drone
+  // salvos chain through multiple enemies.
   if (!projectile.target || !projectile.target.alive) {
     projectile.target = nearestEnemy(projectile.x, projectile.y);
   }

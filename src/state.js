@@ -1,3 +1,5 @@
+// Shared mutable state for the whole Canvas game. Modules import these objects
+// directly so gameplay remains dependency-free and easy to inspect in browser.
 export const canvas = document.getElementById("gameCanvas");
 export const ctx = canvas.getContext("2d");
 

@@ -1,3 +1,5 @@
+// Owns enemy spawning, movement AI, defeat bookkeeping, and kinetic suspension state.
+// Visual enemy drawing lives in enemyArt.js.
 import { customization, drops, enemies, game, player } from "./state.js";
 import { addBurst } from "./effects.js";
 import { groundAt, nearTeleportBuffer, surfaceYAt, walkableSurfaces } from "./terrain.js";
@@ -45,6 +47,8 @@ function enemySpawnPoints() {
   const grouped = { ground: [], upper: [], cave: [] };
   const safeStartHalfWidth = 280;
 
+  // Spawn candidates come from every walkable surface so enemies naturally spread
+  // across ground, upper platforms, caves, and expansion platforms.
   for (const surface of walkableSurfaces()) {
     const width = surface.width;
     const count = Math.max(1, Math.floor(width / 260));
@@ -149,6 +153,7 @@ function updateSuspendedEnemy(enemy, dt) {
   if (!enemy.suspendedFor || enemy.suspendedFor <= 0) return false;
   enemy.suspendedFor = Math.max(0, enemy.suspendedFor - dt);
   enemy.suspendedSpin = (enemy.suspendedSpin || 0) + dt * Math.PI * 2.3;
+  // Kinetic discharge has three visual beats: ease upward, hover/spin, ease down.
   const duration = enemy.suspendedDuration || 5;
   const elapsed = duration - enemy.suspendedFor;
   const riseDuration = 0.55;

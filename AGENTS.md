@@ -14,13 +14,18 @@ Use `http://localhost:8000/` for local browser testing. Because `index.html` loa
 
 Keep new behavior in the closest existing module:
 
-- Rendering and menus: `src/render.js`
+- Terrain, portals, projectiles, and draw orchestration: `src/render.js`
+- Enemy drawing: `src/enemyArt.js`
+- HUD drawing: `src/hud.js`
+- Menu and overlay drawing: `src/menus.js`
+- Shared power-up icons: `src/powerIcons.js`
 - Selectable player art: `src/playerCharacters.js`
+- Player-attached power-up art and held weapon drawing: `src/playerPowerArt.js`
 - Selectable weapon art: `src/weapons.js`
-- Movement, jump charges, and stomp rules: `src/player.js`
-- Enemy spawning/AI: `src/enemies.js`
+- Movement, jump charges, rocket glide, and stomp rules: `src/player.js`
+- Enemy spawning, AI, and suspension state: `src/enemies.js`
 - Projectiles, directional aiming, and shot collisions: `src/projectiles.js`
-- Power-up grants, starting loadouts, state, and recharge: `src/powerups.js`
+- Power-up grants, starting loadouts, tier caps, recharge, and shield effects: `src/powerups.js`
 - Drone-specific behavior: `src/drone.js`
 - Customize menu logic: `src/customize.js`
 - Input routing: `src/input.js`

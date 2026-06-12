@@ -1,3 +1,5 @@
+// Owns Drone runtime behavior: charge/recharge, fly-in/fly-out, and missile firing.
+// Drone art is drawn in render.js; missile homing is updated in projectiles.js.
 import { camera, drone, game, powerUps, projectiles } from "./state.js";
 import { nearestEnemy, visibleEnemy } from "./targeting.js";
 import { droneExtraMissileMax, primaryPowerLevel } from "./powerups.js";
@@ -85,6 +87,8 @@ function updateDroneRecharge(dt) {
 
 function fireDroneShot() {
   fireDroneMissile();
+  // Tier two Drone spends a shared extra missile bank and releases a short salvo.
+  // Each delayed missile picks a fresh nearest target when fired.
   const extraCount = Math.min(powerUps.droneExtraMissiles, 1 + Math.floor(Math.random() * 3));
   if (extraCount > 0) {
     powerUps.droneExtraMissiles -= extraCount;

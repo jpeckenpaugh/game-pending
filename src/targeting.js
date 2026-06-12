@@ -1,3 +1,5 @@
+// Small targeting helpers shared by Specs, Radar, and Drone missiles.
+// This module only selects enemies; projectile steering lives in projectiles.js.
 import { enemies } from "./state.js";
 import { worldToScreenX, worldToScreenY } from "./terrain.js";
 

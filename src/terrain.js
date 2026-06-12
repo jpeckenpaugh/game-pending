@@ -1,3 +1,5 @@
+// Owns generated world geometry: terrain wave, platforms, ladders, caves,
+// teleports, walkable surfaces, and world/screen coordinate conversion.
 import { camera, customization, enemies, game, player, world } from "./state.js";
 
 export function resizeCanvas(canvas, ctx) {
@@ -59,6 +61,8 @@ export function buildTerrain() {
 }
 
 function buildArenaLayout() {
+  // The arena grows outward with level progression while preserving a safe
+  // center spawn and reachable upper/cave routes.
   const levelGrowth = (game.level - 1) * 90;
   const margin = 110;
   const centerX = world.width / 2;
@@ -218,6 +222,8 @@ export function landingSurfaceAt(x, previousY, currentY, wasOnGround = false, cu
     best = { y: groundY, surfaceId: "ground" };
   }
 
+  // Platforms are one-way: landing only counts when crossing down onto them or
+  // when already grounded on that exact surface.
   for (const platform of world.platforms) {
     if (x < platform.x - 10 || x > platform.x + platform.width + 10) continue;
     if ((previousY <= platform.y && currentY >= platform.y) || (wasOnGround && currentSurfaceId === platform.id && Math.abs(currentY - platform.y) <= 28)) {

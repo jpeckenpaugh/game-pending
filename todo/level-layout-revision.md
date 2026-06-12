@@ -304,6 +304,23 @@
 - [x] Reduce portal concurrent inner ovals.
 - [x] Run syntax checks after X jump and portal speed update.
 - [x] Run browser input probe for X jump replacing Command.
+- [x] Extract HUD drawing from `src/render.js` into `src/hud.js`.
+- [x] Extract menu and overlay drawing from `src/render.js` into `src/menus.js`.
+- [x] Add shared `src/powerIcons.js` for HUD and power-choice artwork.
+- [x] Extract player-attached power-up artwork from `src/playerCharacters.js` into `src/playerPowerArt.js`.
+- [x] Add light tier/recharge section cues in `src/powerups.js`.
+- [x] Update README and AGENTS for rendering module ownership split.
+- [x] Run syntax checks after HUD/menu/player power-art refactor.
+- [x] Browser smoke test title, gameplay HUD, pause, and Customize after refactor.
+- [x] Extract enemy drawing from `src/render.js` into `src/enemyArt.js`.
+- [x] Remove unused power-up summary/debug grant exports.
+- [x] Update README and AGENTS for enemy art ownership.
+- [x] Run syntax checks after enemy art cleanup.
+- [x] Browser smoke test gameplay and enemy rendering after enemy art cleanup.
+- [x] Add developer-focused module header notes across all `src/*.js` modules.
+- [x] Add short comments around non-obvious systems: teleport phases, glide gating, kinetic suspension, tier-two power resources, HUD charge bars, manual aiming, and generated terrain surfaces.
+- [x] Run syntax checks after developer note pass.
+- [x] Browser smoke test page load after developer note pass.
 - [x] Extend manual weapon aiming directions to gun and wand.
 - [x] Preserve grounded crouch/down as forward fire for gun and wand.
 - [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.

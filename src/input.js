@@ -1,3 +1,5 @@
+// Owns input routing for keyboard, mouse, touch, and menu activation.
+// Gameplay interpretation stays in player.js/projectiles.js/customize.js.
 import { game, keys, states, touches } from "./state.js";
 import { beginNewGame, chooseLevelPowerUp, choosePowerChoice, grantAndRefreshPowerChoice, pauseGame, resumeGame, returnToTitle, showPowerChoice } from "./level.js";
 import { shoot } from "./projectiles.js";
@@ -27,6 +29,7 @@ export function setupInput(canvas) {
       return;
     }
 
+    // X is the dedicated jump/glide key so Up/W can remain aiming and climbing.
     if (key === "x" && !keys.has(key)) game.jumpRequested = true;
     if (key === "g" && !keys.has(key) && game.state === states.PLAYING) showPowerChoice(states.PLAYING);
     if (key === " ") shoot();

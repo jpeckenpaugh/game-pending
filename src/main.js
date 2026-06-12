@@ -1,3 +1,5 @@
+// Owns the main loop and high-level update order. Most domain behavior lives in
+// focused modules; this file coordinates camera, phase flow, and system updates.
 import { camera, canvas, ctx, customization, drops, enemies, game, player, states, world } from "./state.js";
 import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
@@ -106,6 +108,8 @@ function updateTeleport(dt) {
   game.teleportTimer += dt;
   if (game.teleportTimer < game.teleportDuration) return;
 
+  // Teleport is intentionally staged: zoom out at source, pan across, move the
+  // player, then zoom in at destination. Gameplay updates pause during this.
   if (game.teleportPhase === "zoomOut") {
     game.teleportPanStartX = camera.x;
     game.teleportPanStartY = camera.y;
@@ -175,6 +179,7 @@ function updateCamera(dt) {
     targetX = game.teleportFromX - viewportWidth * 0.5;
     targetY = game.teleportFromY - viewportHeight * 0.55;
   } else if (game.teleportPhase === "pan") {
+    // Pan and zoom-in use stored start positions so phase handoffs do not snap.
     const progress = smoothstep(game.teleportDuration > 0 ? game.teleportTimer / game.teleportDuration : 1);
     const destinationX = clampedCameraX(game.teleportToX - viewportWidth * 0.5, viewportWidth);
     const destinationY = clampedCameraY(game.teleportToY - viewportHeight * 0.55, viewportHeight);

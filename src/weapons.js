@@ -1,3 +1,5 @@
+// Owns small held-weapon drawings. Projectile behavior and aiming live in
+// projectiles.js; player attachment points live in playerPowerArt.js.
 import { ctx } from "./state.js";
 
 export function drawWeapon(type, x, y, facing, scale = 1, rotation = 0) {

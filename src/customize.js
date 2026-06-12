@@ -1,3 +1,5 @@
+// Owns Customize menu state transitions and value editing.
+// Rendering lives in menus.js; this module only decides what field/action changed.
 import { customization, game, states } from "./state.js";
 import { startLevel } from "./level.js";
 

@@ -1,6 +1,9 @@
+// Owns power-up level caps, grants, recharge accounting, and shield collision
+// outcomes. Runtime movement/firing is handled by player.js and drone.js.
 import { customization, drone, game, powerUpPool, powerUps, projectiles, player } from "./state.js";
 import { groundAt, surfaceById, surfaceYAt } from "./terrain.js";
 
+// Tier helpers keep levels 1-5 as primary capacity and 6-10 as secondary capacity.
 export function primaryPowerLevel(level) {
   return Math.max(0, Math.min(5, level));
 }
@@ -61,11 +64,7 @@ export function applyStartingPowerUps() {
   powerUps.droneExtraRecharge = 0;
 }
 
-export function grantRandomPowerUp() {
-  const type = powerUpPool[Math.floor(Math.random() * powerUpPool.length)];
-  return grantPowerUp(type);
-}
-
+// Grants advance one power level at a time while preserving current charge state.
 export function grantPowerUp(type) {
   if (type === "boots") {
     powerUps.bootsLevel = Math.min(10, powerUps.bootsLevel + 1);
@@ -144,12 +143,6 @@ function shuffled(items) {
   return copy;
 }
 
-export function grantPowerUpWithFeedback() {
-  const granted = grantRandomPowerUp();
-  game.message = `Granted: ${granted}`;
-  game.messageTimer = 2;
-}
-
 export function rechargePowerUpsOnLevelComplete() {
   if (powerUps.shieldLevel > 0) {
     powerUps.shieldCharges = primaryPowerLevel(powerUps.shieldLevel);
@@ -171,6 +164,7 @@ export function rechargePowerUpsOnLevelComplete() {
   }
 }
 
+// Runtime recharge for Shield's primary charge and tier-two kinetic discharge.
 export function updateShieldRecharge(dt) {
   const primaryMax = primaryPowerLevel(powerUps.shieldLevel);
   if (primaryMax === 0 || powerUps.shieldCharges >= primaryMax) {
@@ -200,6 +194,7 @@ export function updateShieldRecharge(dt) {
   }
 }
 
+// Runtime recharge for Boots' tier-two glide resource.
 export function updateBootsGlideRecharge(dt) {
   const max = bootsGlideMax();
   if (max === 0) {
@@ -216,6 +211,7 @@ export function updateBootsGlideRecharge(dt) {
   powerUps.bootsGlideCharge = Math.min(max, powerUps.bootsGlideCharge + dt);
 }
 
+// Shield absorption owns the collision outcome; callers handle game-over flow.
 export function absorbOrTakeHit(onGameOver, enemy = null) {
   if (powerUps.shieldCharges > 0) {
     powerUps.shieldCharges -= 1;
@@ -256,14 +252,4 @@ function suspendEnemy(enemy) {
   enemy.suspendedEndY = endY;
   enemy.suspendedSpin = 0;
   enemy.flashTimer = 5;
-}
-
-export function powerUpSummary() {
-  const active = [];
-  if (powerUps.bootsLevel) active.push(`Boots ${powerUps.bootsLevel}`);
-  if (powerUps.specs) active.push("Specs");
-  if (powerUps.radar) active.push("Radar");
-  if (powerUps.droneLevel) active.push(`Drone ${powerUps.droneCharges}/${primaryPowerLevel(powerUps.droneLevel)}`);
-  if (powerUps.shieldLevel) active.push(`Shield ${powerUps.shieldCharges}/${primaryPowerLevel(powerUps.shieldLevel)}`);
-  return active.length > 0 ? active.join("  ") : "none";
 }

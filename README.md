@@ -33,18 +33,37 @@ Menus support Up / Down / Left / Right / Enter. The Customize menu can change th
 
 After clearing a level, choose one of three offered power-ups before the next wave starts.
 
+## Power Ups
+
+- Boots levels 1-5 grant refreshed mid-air jumps. Levels 6-10 add rocket glide charge, which activates by holding `X` after reaching the apex of the current jump or mid-air jump.
+- Shield levels 1-5 grant hit-blocking shield charges. Levels 6-10 add kinetic discharges that suspend, flash, and spin an enemy while preserving player motion.
+- Drone levels 1-5 grant drone strike charges. Levels 6-10 add extra missile charges for rapid homing salvos.
+- Specs enable ranged auto-aim when the player is not manually aiming.
+- Radar points toward the nearest enemy.
+
+The HUD keeps Level, Ammo, and Enemies in a framed top row. Active power-ups appear as icons in a framed bottom strip; leveled power-ups show `+N`, and charge-based abilities show one or more charge bars.
+
+## World Layout
+
+Levels are generated as expanding multi-area arenas with upper platforms, underground cave routes, ladders, and left/right wrap portals. Portal markers use a slower animated inner-oval flow, and teleporting zooms out, pans across the world, then zooms back in at the destination.
+
 ## Project Structure
 
 - `index.html`: page shell and canvas
 - `src/main.js`: game loop and high-level update flow
 - `src/state.js`: shared mutable game state
-- `src/render.js`: terrain, enemies, UI, menus, and overall draw order
+- `src/render.js`: terrain, portals, projectiles, and overall draw order
+- `src/enemyArt.js`: enemy drawing, including suspended/flash rendering
+- `src/hud.js`: framed top HUD and bottom power-up icon/charge HUD
+- `src/menus.js`: title, pause, customize, game-over, and power-choice overlays
+- `src/powerIcons.js`: reusable power-up icon artwork for HUD and choice cards
 - `src/playerCharacters.js`: selectable player renderers, including Original and Croc
+- `src/playerPowerArt.js`: player-attached power-up visuals and held weapon drawing
 - `src/weapons.js`: selectable weapon renderers, including Gun, Club, and Wand
-- `src/player.js`: player movement, jumping, ducking, and stomp checks
-- `src/enemies.js`: enemy creation and behavior
+- `src/player.js`: player movement, jumping, rocket glide, ducking, and stomp checks
+- `src/enemies.js`: enemy creation, behavior, and kinetic suspension state
 - `src/projectiles.js`: player attacks, directional aiming, homing shots, and shield collisions
-- `src/powerups.js`: power-up grants, starting loadout, recharge, and HUD text
+- `src/powerups.js`: power-up grants, starting loadout, tier caps, recharge, and shield effects
 - `src/drone.js`: drone power-up behavior
 - `src/customize.js`: Customize menu state and keyboard behavior
 - `src/input.js`: keyboard, mouse, touch, and menu input routing

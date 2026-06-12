@@ -1,3 +1,5 @@
+// Owns level lifecycle: reset transient state, build the world, spawn enemies,
+// and move between title/play/pause/choice/game-over flows.
 import { customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";

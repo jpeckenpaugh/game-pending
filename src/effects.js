@@ -1,3 +1,5 @@
+// Owns small transient particles used by impacts, defeats, and pickups.
+// Effects are stored as shared state and rendered by render.js.
 import { particles } from "./state.js";
 
 export function addBurst(x, y, count) {
