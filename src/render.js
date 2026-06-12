@@ -315,14 +315,8 @@ function drawScreenOverlay() {
     drawPauseScreen();
   }
 
-  if (game.state === states.LEVEL_COMPLETE) {
-    drawCenteredText([
-      { text: `LEVEL ${game.completedLevel} CLEAR`, font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 44 },
-      { text: `Power-up gained: ${game.lastPowerUp}`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
-      { text: `Next wave: ${10 + game.completedLevel * 4} enemies`, font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
-      { text: "+4 ammo bonus", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 34 },
-    ], Math.max(120, window.innerHeight * 0.28));
-    drawButton("CONTINUE", Math.max(260, window.innerHeight * 0.56), true);
+  if (game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) {
+    drawLevelPowerChoiceScreen();
   }
 
   if (game.state === states.GAME_OVER) {
@@ -332,6 +326,107 @@ function drawScreenOverlay() {
     ], Math.max(132, window.innerHeight * 0.3));
     drawButton("NEW GAME", Math.max(250, window.innerHeight * 0.54), true);
   }
+}
+
+function drawLevelPowerChoiceScreen() {
+  const debugChoice = game.state === states.POWER_CHOICE;
+  drawCenteredText([
+    { text: debugChoice ? "CHOOSE POWER" : `LEVEL ${game.completedLevel} CLEAR`, font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 44 },
+    { text: debugChoice ? "Pick one, or press G to auto-grant and reroll" : "Choose a power-up", font: "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 30 },
+  ], Math.max(110, window.innerHeight * 0.22));
+
+  const choices = game.powerChoices;
+  const boxWidth = Math.min(168, Math.max(96, (window.innerWidth - 72) / 3));
+  const gap = Math.min(24, Math.max(10, (window.innerWidth - boxWidth * 3 - 36) / 2));
+  const totalWidth = boxWidth * choices.length + gap * (choices.length - 1);
+  const startX = (window.innerWidth - totalWidth) / 2;
+  const boxY = Math.max(190, window.innerHeight * 0.36);
+  const boxHeight = 172;
+
+  for (let i = 0; i < choices.length; i += 1) {
+    const choice = choices[i];
+    const x = startX + i * (boxWidth + gap);
+    drawPowerChoiceBox(choice, x, boxY, boxWidth, boxHeight, i === game.powerChoiceSelection);
+  }
+
+  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("Left/Right selects. Enter chooses.", window.innerWidth / 2, boxY + boxHeight + 38);
+  ctx.fillText(debugChoice ? "G auto-grants one shown power and refreshes." : "+4 ammo bonus on next level", window.innerWidth / 2, boxY + boxHeight + 58);
+  ctx.textAlign = "left";
+}
+
+function drawPowerChoiceBox(choice, x, y, width, height, selected) {
+  ctx.lineWidth = selected ? 4 : 2;
+  ctx.strokeRect(x, y, width, height);
+  drawPowerIcon(choice.type, x + width / 2, y + 46);
+
+  ctx.textAlign = "center";
+  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText(choice.name, x + width / 2, y + 94);
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  wrapCenteredText(choice.description, x + width / 2, y + 120, width - 20, 16);
+  ctx.font = "11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.fillText(`${game.powerChoices.indexOf(choice) + 1}`, x + width - 16, y + 20);
+  ctx.textAlign = "left";
+}
+
+function wrapCenteredText(text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let lineY = y;
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      ctx.fillText(line, x, lineY);
+      line = word;
+      lineY += lineHeight;
+    } else {
+      line = next;
+    }
+  }
+  if (line) ctx.fillText(line, x, lineY);
+}
+
+function drawPowerIcon(type, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.lineWidth = 2;
+  if (type === "boots") {
+    ctx.fillRect(-20, 4, 16, 9);
+    ctx.fillRect(-9, -2, 6, 6);
+    ctx.fillRect(5, 4, 16, 9);
+    ctx.fillRect(5, -2, 6, 6);
+  } else if (type === "shield") {
+    ctx.beginPath();
+    ctx.arc(0, 0, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (type === "drone") {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    line(-9, -11, -16, -21);
+    line(9, -11, 16, -21);
+  } else if (type === "radar") {
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(14, -14, 5, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.arc(-8, 0, 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(8, 0, 7, 0, Math.PI * 2);
+    ctx.stroke();
+    line(-1.5, 0, 1.5, 0);
+  }
+  ctx.restore();
 }
 
 function drawPauseScreen() {

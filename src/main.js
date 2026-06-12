@@ -135,7 +135,7 @@ function updateCamera(dt) {
 
   const viewportWidth = window.innerWidth / camera.zoom;
   const viewportHeight = window.innerHeight / camera.zoom;
-  const centeredStates = [states.TITLE, states.CUSTOMIZE, states.GAME_OVER, states.LEVEL_COMPLETE, states.PAUSED];
+  const centeredStates = [states.TITLE, states.CUSTOMIZE, states.GAME_OVER, states.LEVEL_COMPLETE, states.POWER_CHOICE, states.PAUSED];
   let targetX = centeredStates.includes(game.state)
     ? world.width / 2 - viewportWidth / 2
     : player.x - viewportWidth * 0.5;

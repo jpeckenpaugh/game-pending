@@ -256,6 +256,20 @@
 - [x] Run syntax checks after Boots levels and Power Ups submenu update.
 - [x] Run headless checks for Boots mid-air jumps, caps, and submenu navigation.
 - [x] Smoke test Power Ups Customize submenu after Boots level update.
+- [x] Replace automatic level-clear random power grant with a three-choice power-up menu.
+- [x] Draw level-clear power-up choices as three labeled boxes with icons and short descriptions.
+- [x] Support keyboard and click selection for level-clear power-up choices.
+- [x] Run syntax checks after level-clear power-up choice menu.
+- [x] Run headless checks for level-clear power-up choices and selection.
+- [x] Smoke test game page after level-clear power-up choice menu.
+- [x] Tie `G` debug grant into the same three-choice power-up picker.
+- [x] Let `G` on the power picker auto-grant one shown power and refresh choices.
+- [x] Run syntax checks after `G` power picker update.
+- [x] Run headless checks for `G` power picker open, choose, and auto-grant refresh.
+- [x] Smoke test game page after `G` power picker update.
+- [x] Match Drone pick-three icon to in-game drone artwork.
+- [x] Run syntax checks after Drone pick-three icon update.
+- [x] Run headless render check for Drone pick-three icon.
 - [x] Extend manual weapon aiming directions to gun and wand.
 - [x] Preserve grounded crouch/down as forward fire for gun and wand.
 - [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.

@@ -1,7 +1,7 @@
 import { customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
-import { applyStartingPowerUps, grantRandomPowerUp, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
+import { applyStartingPowerUps, grantPowerUp, powerUpChoiceOptions, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
 
 export function startLevel(nextLevel) {
   game.level = nextLevel;
@@ -41,6 +41,9 @@ export function startLevel(nextLevel) {
 
   game.message = `Level ${game.level}`;
   game.messageTimer = 2;
+  game.powerChoices = [];
+  game.powerChoiceSelection = 0;
+  game.powerChoiceReturnState = states.PLAYING;
 }
 
 export function beginNewGame() {
@@ -76,11 +79,53 @@ export function continueToNextLevel() {
 }
 
 export function showLevelComplete() {
-  grantRandomPowerUp();
-  rechargePowerUpsOnLevelComplete();
+  game.powerChoices = powerUpChoiceOptions(3);
+  game.powerChoiceSelection = 0;
+  game.powerChoiceReturnState = states.PLAYING;
   game.state = states.LEVEL_COMPLETE;
   game.message = "";
   game.messageTimer = 0;
+}
+
+export function chooseLevelPowerUp(index = game.powerChoiceSelection) {
+  const choice = game.powerChoices[index];
+  if (!choice) return false;
+  grantPowerUp(choice.type);
+  rechargePowerUpsOnLevelComplete();
+  continueToNextLevel();
+  return true;
+}
+
+export function showPowerChoice(returnState = states.PLAYING) {
+  game.powerChoices = powerUpChoiceOptions(3);
+  game.powerChoiceSelection = 0;
+  game.powerChoiceReturnState = returnState;
+  game.state = states.POWER_CHOICE;
+  game.message = "";
+  game.messageTimer = 0;
+}
+
+export function choosePowerChoice(index = game.powerChoiceSelection) {
+  const choice = game.powerChoices[index];
+  if (!choice) return false;
+  grantPowerUp(choice.type);
+  rechargePowerUpsOnLevelComplete();
+  game.powerChoices = [];
+  game.powerChoiceSelection = 0;
+  game.state = game.powerChoiceReturnState || states.PLAYING;
+  game.powerChoiceReturnState = states.PLAYING;
+  return true;
+}
+
+export function grantAndRefreshPowerChoice() {
+  if (game.powerChoices.length === 0) return false;
+  const index = Math.floor(Math.random() * game.powerChoices.length);
+  grantPowerUp(game.powerChoices[index].type);
+  rechargePowerUpsOnLevelComplete();
+  game.powerChoices = powerUpChoiceOptions(3);
+  game.powerChoiceSelection = 0;
+  game.state = states.POWER_CHOICE;
+  return true;
 }
 
 export function startLevelClearCollection() {
@@ -113,7 +158,12 @@ export function activateCurrentScreen() {
   }
 
   if (game.state === states.LEVEL_COMPLETE) {
-    continueToNextLevel();
+    chooseLevelPowerUp(game.powerChoiceSelection);
+    return true;
+  }
+
+  if (game.state === states.POWER_CHOICE) {
+    choosePowerChoice(game.powerChoiceSelection);
     return true;
   }
 

@@ -78,6 +78,7 @@ export const states = {
   PAUSED: "paused",
   PLAYING: "playing",
   LEVEL_COMPLETE: "levelComplete",
+  POWER_CHOICE: "powerChoice",
   GAME_OVER: "gameOver",
   LEVEL_COLLECTING: "levelCollecting",
 };
@@ -125,6 +126,9 @@ export const game = {
   completedLevel: 0,
   levelClearTimer: 0,
   lastPowerUp: "",
+  powerChoices: [],
+  powerChoiceSelection: 0,
+  powerChoiceReturnState: "playing",
   lastTime: performance.now(),
   autoTargetFps: 60,
   autoFramePressure: 0,

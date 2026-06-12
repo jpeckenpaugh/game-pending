@@ -1,6 +1,5 @@
 import { game, keys, states, touches } from "./state.js";
-import { beginNewGame, continueToNextLevel, pauseGame, resumeGame, returnToTitle } from "./level.js";
-import { grantPowerUpWithFeedback } from "./powerups.js";
+import { beginNewGame, chooseLevelPowerUp, choosePowerChoice, grantAndRefreshPowerChoice, pauseGame, resumeGame, returnToTitle, showPowerChoice } from "./level.js";
 import { shoot } from "./projectiles.js";
 import { cancelCustomize, customizeActionAt, cycleCustomizeOption, handleCustomizeKey, openCustomize, saveCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
 
@@ -29,7 +28,7 @@ export function setupInput(canvas) {
     }
 
     if (key === "meta" && !keys.has(key)) game.jumpRequested = true;
-    if (key === "g" && !keys.has(key) && game.state === states.PLAYING) grantPowerUpWithFeedback();
+    if (key === "g" && !keys.has(key) && game.state === states.PLAYING) showPowerChoice(states.PLAYING);
     if (key === " ") shoot();
     if (key === "r" && game.state === states.PLAYING) beginNewGame();
     keys.add(key);
@@ -118,6 +117,16 @@ function handleMenuAction(x, y) {
     return false;
   }
 
+  if (game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) {
+    const choiceIndex = powerChoiceAt(x, y);
+    if (choiceIndex >= 0) {
+      return game.state === states.LEVEL_COMPLETE
+        ? chooseLevelPowerUp(choiceIndex)
+        : choosePowerChoice(choiceIndex);
+    }
+    return false;
+  }
+
   const buttonWidth = Math.min(260, window.innerWidth - 48);
   const buttonX = (window.innerWidth - buttonWidth) / 2;
   let buttonY = Math.max(220, window.innerHeight * 0.46);
@@ -132,10 +141,6 @@ function handleMenuAction(x, y) {
     && y >= buttonY && y <= buttonY + 48;
   if (!insideButton) return false;
 
-  if (game.state === states.LEVEL_COMPLETE) {
-    continueToNextLevel();
-    return true;
-  }
   if (game.state === states.GAME_OVER) {
     beginNewGame();
     return true;
@@ -168,9 +173,32 @@ function handleMenuKey(key) {
     if (key === "enter" || key === " ") return activatePauseSelection(game.pauseSelection);
   }
 
-  if (game.state === states.LEVEL_COMPLETE && (key === "enter" || key === " ")) {
-    continueToNextLevel();
+  if ((game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) && (key === "enter" || key === " ")) {
+    if (game.state === states.LEVEL_COMPLETE) chooseLevelPowerUp(game.powerChoiceSelection);
+    else choosePowerChoice(game.powerChoiceSelection);
     return true;
+  }
+
+  if (game.state === states.POWER_CHOICE && key === "g") {
+    grantAndRefreshPowerChoice();
+    return true;
+  }
+
+  if (game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) {
+    if (game.powerChoices.length === 0) return false;
+    if (key === "arrowleft" || key === "a") {
+      game.powerChoiceSelection = (game.powerChoiceSelection + game.powerChoices.length - 1) % game.powerChoices.length;
+      return true;
+    }
+    if (key === "arrowright" || key === "d") {
+      game.powerChoiceSelection = (game.powerChoiceSelection + 1) % game.powerChoices.length;
+      return true;
+    }
+    if (key === "1" || key === "2" || key === "3") {
+      if (game.state === states.LEVEL_COMPLETE) chooseLevelPowerUp(Number(key) - 1);
+      else choosePowerChoice(Number(key) - 1);
+      return true;
+    }
   }
 
   if (game.state === states.GAME_OVER && (key === "enter" || key === " " || key === "r")) {
@@ -179,6 +207,22 @@ function handleMenuKey(key) {
   }
 
   return false;
+}
+
+function powerChoiceAt(x, y) {
+  const choices = game.powerChoices;
+  if (choices.length === 0) return -1;
+  const boxWidth = Math.min(168, Math.max(96, (window.innerWidth - 72) / 3));
+  const gap = Math.min(24, Math.max(10, (window.innerWidth - boxWidth * 3 - 36) / 2));
+  const totalWidth = boxWidth * choices.length + gap * (choices.length - 1);
+  const startX = (window.innerWidth - totalWidth) / 2;
+  const boxY = Math.max(190, window.innerHeight * 0.36);
+  const boxHeight = 172;
+  for (let i = 0; i < choices.length; i += 1) {
+    const boxX = startX + i * (boxWidth + gap);
+    if (x >= boxX && x <= boxX + boxWidth && y >= boxY && y <= boxY + boxHeight) return i;
+  }
+  return -1;
 }
 
 function activateTitleSelection(selection) {

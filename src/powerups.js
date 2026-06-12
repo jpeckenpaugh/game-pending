@@ -28,7 +28,10 @@ export function applyStartingPowerUps() {
 
 export function grantRandomPowerUp() {
   const type = powerUpPool[Math.floor(Math.random() * powerUpPool.length)];
+  return grantPowerUp(type);
+}
 
+export function grantPowerUp(type) {
   if (type === "boots") {
     powerUps.bootsLevel = Math.min(5, powerUps.bootsLevel + 1);
     player.airJumpsRemaining = Math.max(player.airJumpsRemaining, powerUps.bootsLevel);
@@ -61,6 +64,46 @@ export function grantRandomPowerUp() {
   powerUps.specs = 1;
   game.lastPowerUp = "Specs";
   return game.lastPowerUp;
+}
+
+export function powerUpChoiceOptions(count = 3) {
+  const eligible = shuffled(powerUpPool.filter(powerUpCanImprove));
+  const fallback = shuffled(powerUpPool);
+  const choices = [];
+
+  for (const type of [...eligible, ...fallback]) {
+    if (choices.some((choice) => choice.type === type)) continue;
+    choices.push(powerUpInfo(type));
+    if (choices.length >= count) break;
+  }
+
+  return choices;
+}
+
+function powerUpCanImprove(type) {
+  if (type === "boots") return powerUps.bootsLevel < 5;
+  if (type === "shield") return powerUps.shieldLevel < 5;
+  if (type === "drone") return powerUps.droneLevel < 5;
+  if (type === "specs") return !powerUps.specs;
+  if (type === "radar") return !powerUps.radar;
+  return true;
+}
+
+function powerUpInfo(type) {
+  if (type === "boots") return { type, name: "Boots", description: "Adds a mid-air jump." };
+  if (type === "shield") return { type, name: "Shield", description: "Blocks one hit per charge." };
+  if (type === "drone") return { type, name: "Drone", description: "Calls in air support." };
+  if (type === "radar") return { type, name: "Radar", description: "Points to the nearest enemy." };
+  return { type: "specs", name: "Specs", description: "Auto-aims ranged attacks." };
+}
+
+function shuffled(items) {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 export function grantPowerUpWithFeedback() {
