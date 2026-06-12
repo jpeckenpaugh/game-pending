@@ -1,11 +1,13 @@
 import { customization, game, states } from "./state.js";
+import { startLevel } from "./level.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps", "playerType", "weaponType", "save", "cancel"];
-const customizeRows = ["name", "tagline", "startingPowerUps", "playerType", "weaponType"];
+export const customizeFields = ["name", "tagline", "startingPowerUps", "level", "playerType", "weaponType", "worldGeneration", "save", "cancel"];
+const customizeRows = ["name", "tagline", "startingPowerUps", "level", "playerType", "weaponType", "worldGeneration"];
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
 const playerTypes = ["original", "croc"];
 const weaponTypes = ["gun", "club", "wand"];
+const worldGenerationTypes = ["seeded", "random"];
 
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
@@ -14,11 +16,16 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedName = customization.name;
   customization.savedTagline = customization.tagline;
   customization.savedStartingPowerUps = customization.startingPowerUps;
+  customization.savedLevel = customization.level;
   customization.savedPlayerType = customization.playerType;
   customization.savedWeaponType = customization.weaponType;
+  customization.savedWorldGeneration = customization.worldGeneration;
 }
 
 export function saveCustomize() {
+  if (customization.returnState === states.TITLE || customization.returnState === states.PAUSED) {
+    startLevel(customization.level);
+  }
   game.state = customization.returnState;
 }
 
@@ -26,8 +33,10 @@ export function cancelCustomize() {
   customization.name = customization.savedName;
   customization.tagline = customization.savedTagline;
   customization.startingPowerUps = customization.savedStartingPowerUps;
+  customization.level = customization.savedLevel;
   customization.playerType = customization.savedPlayerType;
   customization.weaponType = customization.savedWeaponType;
+  customization.worldGeneration = customization.savedWorldGeneration;
   game.state = customization.returnState;
 }
 
@@ -52,7 +61,7 @@ export function customizeActionAt(x, y) {
     if (inside(x, y, row)) return customizeRows[i];
   }
 
-  const buttonY = Math.max(424, startY + 240);
+  const buttonY = Math.max(492, startY + 306);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -107,23 +116,26 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
-  if (customization.selectedField === "startingPowerUps") {
+  if (isNumberField(customization.selectedField)) {
     if (lower === "arrowleft" || key === "-") {
-      customization.startingPowerUps = Math.max(0, customization.startingPowerUps - 1);
+      stepNumberField(customization.selectedField, -1);
       return true;
     }
     if (lower === "arrowright" || key === "+" || key === "=") {
-      customization.startingPowerUps = Math.min(20, customization.startingPowerUps + 1);
+      stepNumberField(customization.selectedField, 1);
       return true;
     }
     if (/^[0-9]$/.test(key)) {
-      customization.startingPowerUps = Math.min(20, Number(key));
+      const { min, max } = numberBounds(customization.selectedField);
+      const current = customization[customization.selectedField];
+      const next = current >= 10 ? Number(key) : current * 10 + Number(key);
+      customization[customization.selectedField] = Math.max(min, Math.min(max, next));
       return true;
     }
     return false;
   }
 
-  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType") {
+  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType" || customization.selectedField === "worldGeneration") {
     if (lower === "arrowleft") {
       selectRelativeOption(customization.selectedField, -1);
       return true;
@@ -155,6 +167,10 @@ export function selectCustomizeField(field) {
 }
 
 export function cycleCustomizeOption(field, offset = 1) {
+  if (isNumberField(field)) {
+    stepNumberField(field, offset);
+    return;
+  }
   selectRelativeOption(field, offset);
 }
 
@@ -164,16 +180,33 @@ function selectRelativeField(offset) {
   customization.selectedField = customizeFields[next];
 }
 
+function isNumberField(field) {
+  return field === "startingPowerUps" || field === "level";
+}
+
+function numberBounds(field) {
+  return field === "level"
+    ? { min: 1, max: 99 }
+    : { min: 0, max: 20 };
+}
+
+function stepNumberField(field, offset) {
+  const { min, max } = numberBounds(field);
+  customization[field] = Math.max(min, Math.min(max, customization[field] + offset));
+}
+
 function selectRelativeOption(field, offset) {
-  const options = field === "weaponType" ? weaponTypes : playerTypes;
-  const current = field === "weaponType" ? customization.weaponType : customization.playerType;
+  const options = optionSetForField(field);
+  const current = customization[field];
   const index = options.indexOf(current);
   const next = (index + offset + options.length) % options.length;
-  if (field === "weaponType") {
-    customization.weaponType = options[next];
-  } else {
-    customization.playerType = options[next];
-  }
+  customization[field] = options[next];
+}
+
+function optionSetForField(field) {
+  if (field === "weaponType") return weaponTypes;
+  if (field === "worldGeneration") return worldGenerationTypes;
+  return playerTypes;
 }
 
 function getSelectedText() {

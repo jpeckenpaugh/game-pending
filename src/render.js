@@ -1,5 +1,5 @@
 import { camera, ctx, customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
-import { groundAt, worldToScreenX } from "./terrain.js";
+import { groundAt, worldToScreenX, worldToScreenY } from "./terrain.js";
 import { powerUpSummary } from "./powerups.js";
 import { drawPlayerCharacter } from "./playerCharacters.js";
 import { drawWeapon } from "./weapons.js";
@@ -11,23 +11,81 @@ function line(x1, y1, x2, y2) {
   ctx.stroke();
 }
 
+function z(value) {
+  return value * camera.zoom;
+}
+
+function strokeWidth(value) {
+  return Math.max(1, z(value));
+}
+
 function drawTerrain() {
   const startX = Math.max(0, camera.x - 80);
   const endX = Math.min(world.width, camera.x + window.innerWidth + 80);
   const first = Math.floor(startX / 40) * 40;
 
-  ctx.lineWidth = 3;
+  ctx.lineWidth = strokeWidth(3);
   ctx.beginPath();
-  ctx.moveTo(worldToScreenX(first), groundAt(first) + 0.5);
+  ctx.moveTo(worldToScreenX(first), worldToScreenY(groundAt(first)) + 0.5);
   for (let x = first + 40; x <= endX + 40; x += 40) {
-    ctx.lineTo(worldToScreenX(x), groundAt(x) + 0.5);
+    ctx.lineTo(worldToScreenX(x), worldToScreenY(groundAt(x)) + 0.5);
   }
   ctx.stroke();
 
-  ctx.lineWidth = 2;
+  ctx.lineWidth = strokeWidth(2);
   for (let x = Math.floor(startX / 80) * 80; x < endX; x += 80) {
-    const y = groundAt(x + 12) + 8;
-    line(worldToScreenX(x), y, worldToScreenX(x + 22), groundAt(x + 22) + 8);
+    const y = worldToScreenY(groundAt(x + 12) + 8);
+    line(worldToScreenX(x), y, worldToScreenX(x + 22), worldToScreenY(groundAt(x + 22) + 8));
+  }
+
+  drawPlatforms();
+  drawLadders();
+  drawTeleports();
+}
+
+function drawPlatforms() {
+  ctx.lineWidth = strokeWidth(3);
+  for (const platform of world.platforms) {
+    const x = worldToScreenX(platform.x);
+    const x2 = worldToScreenX(platform.x + platform.width);
+    const y = worldToScreenY(platform.y);
+    if (x2 < -60 || x > window.innerWidth + 60) continue;
+    line(x, y, x2, y);
+    const hatchStart = platform.id === "cave-floor" ? x + z(12) : x + z(18);
+    const hatchEnd = platform.id === "cave-floor" ? x2 - z(12) : x2;
+    const hatchStep = platform.id === "cave-floor" ? z(52) : z(34);
+    for (let rungX = hatchStart; rungX < hatchEnd; rungX += hatchStep) {
+      line(rungX, y + z(4), rungX + z(14), y + z(13));
+    }
+  }
+}
+
+function drawLadders() {
+  ctx.lineWidth = strokeWidth(2);
+  for (const ladder of world.ladders) {
+    const x = worldToScreenX(ladder.x);
+    const y = worldToScreenY(ladder.y);
+    const bottom = worldToScreenY(ladder.y + ladder.height);
+    if (bottom < -60 || y > window.innerHeight + 60) continue;
+    line(x - z(16), y, x - z(16), bottom);
+    line(x + z(16), y, x + z(16), bottom);
+    for (let rungY = y + z(16); rungY < bottom; rungY += z(28)) {
+      line(x - z(16), rungY, x + z(16), rungY);
+    }
+  }
+}
+
+function drawTeleports() {
+  ctx.lineWidth = strokeWidth(3);
+  for (const teleport of world.teleports) {
+    const x = worldToScreenX(teleport.x);
+    const y = worldToScreenY(teleport.y);
+    if (x < -80 || x > window.innerWidth + 80) continue;
+    ctx.beginPath();
+    ctx.ellipse(x, y + z(teleport.height / 2), z(teleport.width / 2), z(teleport.height / 2), 0, 0, Math.PI * 2);
+    ctx.stroke();
+    line(x - z(12), y + z(20), x + z(12), y + z(teleport.height - 20));
+    line(x + z(12), y + z(20), x - z(12), y + z(teleport.height - 20));
   }
 }
 
@@ -35,97 +93,101 @@ function drawEnemy(enemy) {
   if (!enemy.alive) return;
   const x = worldToScreenX(enemy.x);
   if (x < -60 || x > window.innerWidth + 60) return;
+  const y = worldToScreenY(enemy.y);
 
-  ctx.lineWidth = 3;
+  ctx.lineWidth = strokeWidth(3);
   if (enemy.family === "triangle") {
-    drawTriangleEnemy(enemy, x);
+    drawTriangleEnemy(enemy, x, y);
   } else if (enemy.family === "square") {
-    drawSquareEnemy(enemy, x);
+    drawSquareEnemy(enemy, x, y);
   } else {
-    drawCircleEnemy(enemy, x);
+    drawCircleEnemy(enemy, x, y);
   }
 
   if (enemy.movement === "runner") {
-    line(x - enemy.radius - 8, enemy.y + enemy.radius + 4, x + enemy.radius + 8, enemy.y + enemy.radius + 4);
+    line(x - z(enemy.radius + 8), y + z(enemy.radius + 4), x + z(enemy.radius + 8), y + z(enemy.radius + 4));
   }
 
   if (enemy.movement === "hopper") {
-    line(x - 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
-    line(x + 10, enemy.y - enemy.radius - 8, x, enemy.y - enemy.radius - 2);
+    line(x - z(10), y - z(enemy.radius + 8), x, y - z(enemy.radius + 2));
+    line(x + z(10), y - z(enemy.radius + 8), x, y - z(enemy.radius + 2));
   }
 }
 
-function drawCircleEnemy(enemy, x) {
+function drawCircleEnemy(enemy, x, y) {
   ctx.beginPath();
-  ctx.arc(x, enemy.y, enemy.radius, 0, Math.PI * 2);
+  ctx.arc(x, y, z(enemy.radius), 0, Math.PI * 2);
   ctx.stroke();
 
-  line(x - 8, enemy.y - 5, x - 2, enemy.y - 5);
-  line(x + 2, enemy.y - 5, x + 8, enemy.y - 5);
+  line(x - z(8), y - z(5), x - z(2), y - z(5));
+  line(x + z(2), y - z(5), x + z(8), y - z(5));
 }
 
-function drawTriangleEnemy(enemy, x) {
+function drawTriangleEnemy(enemy, x, y) {
   ctx.beginPath();
-  ctx.moveTo(x, enemy.y - enemy.radius);
-  ctx.lineTo(x - enemy.radius, enemy.y + enemy.radius);
-  ctx.lineTo(x + enemy.radius, enemy.y + enemy.radius);
+  ctx.moveTo(x, y - z(enemy.radius));
+  ctx.lineTo(x - z(enemy.radius), y + z(enemy.radius));
+  ctx.lineTo(x + z(enemy.radius), y + z(enemy.radius));
   ctx.closePath();
   ctx.stroke();
 
-  line(x - 8, enemy.y + 3, x - 2, enemy.y + 3);
-  line(x + 2, enemy.y + 3, x + 8, enemy.y + 3);
+  line(x - z(8), y + z(3), x - z(2), y + z(3));
+  line(x + z(2), y + z(3), x + z(8), y + z(3));
 }
 
-function drawSquareEnemy(enemy, x) {
-  const size = enemy.radius * 2;
-  ctx.strokeRect(x - enemy.radius, enemy.y - enemy.radius, size, size);
-  const shieldX = x + enemy.facing * (enemy.radius + 8);
-  line(shieldX, enemy.y - enemy.radius, shieldX, enemy.y + enemy.radius);
-  line(shieldX, enemy.y - enemy.radius, shieldX + enemy.facing * 8, enemy.y - enemy.radius + 6);
-  line(shieldX, enemy.y + enemy.radius, shieldX + enemy.facing * 8, enemy.y + enemy.radius - 6);
+function drawSquareEnemy(enemy, x, y) {
+  const radius = z(enemy.radius);
+  const size = radius * 2;
+  ctx.strokeRect(x - radius, y - radius, size, size);
+  const shieldX = x + enemy.facing * z(enemy.radius + 8);
+  line(shieldX, y - radius, shieldX, y + radius);
+  line(shieldX, y - radius, shieldX + enemy.facing * z(8), y - radius + z(6));
+  line(shieldX, y + radius, shieldX + enemy.facing * z(8), y + radius - z(6));
 
-  line(x - 8, enemy.y - 5, x - 2, enemy.y - 5);
-  line(x + 2, enemy.y - 5, x + 8, enemy.y - 5);
+  line(x - z(8), y - z(5), x - z(2), y - z(5));
+  line(x + z(2), y - z(5), x + z(8), y - z(5));
 }
 
 function drawDrop(drop) {
   const x = worldToScreenX(drop.x);
-  const y = drop.y - 8 + Math.sin(drop.bob) * 4;
+  const y = worldToScreenY(drop.y) - 8 + Math.sin(drop.bob) * 4;
   if (x < -40 || x > window.innerWidth + 40) return;
 
-  ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText("+", x - 8, y + 8);
-  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText("2", x + 10, y + 13);
+  ctx.font = `${z(28)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  ctx.fillText("+", x - z(8), y + z(8));
+  ctx.font = `${z(13)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  ctx.fillText("2", x + z(10), y + z(13));
 }
 
 function drawProjectile(projectile) {
   const x = worldToScreenX(projectile.x);
+  const y = worldToScreenY(projectile.y);
   if (x < -80 || x > window.innerWidth + 80) return;
   if (projectile.homing) {
-    ctx.lineWidth = 2;
+    ctx.lineWidth = strokeWidth(2);
     ctx.beginPath();
-    ctx.arc(x, projectile.y, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, z(5), 0, Math.PI * 2);
     ctx.stroke();
   } else if (projectile.weaponType === "club") {
-    drawWeapon("club", x, projectile.y, projectile.vx >= 0 ? 1 : -1, 1, projectile.rotation || 0);
+    drawWeapon("club", x, y, projectile.vx >= 0 ? 1 : -1, camera.zoom, projectile.rotation || 0);
   } else if (projectile.weaponType === "gun") {
-    ctx.fillRect(x - 8, projectile.y - 1, 16, 2);
+    ctx.fillRect(x - z(8), y - z(1), z(16), z(2));
   } else {
-    ctx.font = "28px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    ctx.fillText("*", x - 8, projectile.y + 8);
+    ctx.font = `${z(28)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    ctx.fillText("*", x - z(8), y + z(8));
   }
 }
 
 function drawDrone() {
   if (!drone.active) return;
   const x = worldToScreenX(drone.x);
-  ctx.lineWidth = 2;
+  const y = worldToScreenY(drone.y);
+  ctx.lineWidth = strokeWidth(2);
   ctx.beginPath();
-  ctx.ellipse(x, drone.y, 18, 8, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, z(18), z(8), 0, 0, Math.PI * 2);
   ctx.stroke();
-  line(x - 7, drone.y - 9, x - 13, drone.y - 17);
-  line(x + 7, drone.y - 9, x + 13, drone.y - 17);
+  line(x - z(7), y - z(9), x - z(13), y - z(17));
+  line(x + z(7), y - z(9), x + z(13), y - z(17));
 }
 
 function drawUi() {
@@ -182,6 +244,16 @@ function drawCenteredText(lines, top) {
   ctx.textAlign = "left";
 }
 
+function drawHintLines(lines, top, font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap = 18) {
+  ctx.font = font;
+  ctx.textAlign = "center";
+  for (const text of lines) {
+    ctx.fillText(text, window.innerWidth / 2, top);
+    top += gap;
+  }
+  ctx.textAlign = "left";
+}
+
 function drawButton(label, y, selected = false) {
   const width = Math.min(260, window.innerWidth - 48);
   const height = 48;
@@ -208,9 +280,14 @@ function drawScreenOverlay() {
     ], Math.max(112, window.innerHeight * 0.24));
     drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46), game.titleSelection === 0);
     drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62), game.titleSelection === 1);
-    drawCenteredText([
-      { text: "Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space", font: "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 24 },
-    ], Math.max(366, window.innerHeight * 0.46 + 148));
+    drawHintLines(
+      window.innerWidth < 560
+        ? ["Move: A/D or arrows", "Jump: W/Up  Duck: S/Down", "Shoot: Space"]
+        : ["Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space"],
+      Math.max(366, window.innerHeight * 0.46 + 148),
+      "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      20
+    );
   }
 
   if (game.state === states.CUSTOMIZE) {
@@ -266,15 +343,19 @@ function drawCustomizeScreen() {
   drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
   drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
   drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
-  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 126);
-  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 168);
+  drawCustomizeRow("level", "Level", String(customization.level), startY + 126);
+  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 168);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 210);
+  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + 252);
 
-  drawSplitButtons("SAVE", "CANCEL", Math.max(424, startY + 240));
+  drawSplitButtons("SAVE", "CANCEL", Math.max(492, startY + 306));
 
-  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels.", window.innerWidth / 2, Math.max(504, startY + 308));
-  ctx.textAlign = "left";
+  drawHintLines(
+    window.innerWidth < 620
+      ? ["Arrows select. Type text.", "Left/Right changes values.", "Enter saves. Esc cancels."]
+      : ["Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels."],
+    Math.max(572, startY + 374)
+  );
 }
 
 function playerTypeLabel(playerType) {
@@ -285,6 +366,10 @@ function weaponTypeLabel(weaponType) {
   if (weaponType === "club") return "Club";
   if (weaponType === "wand") return "Wand";
   return "Gun";
+}
+
+function worldGenerationLabel(worldGeneration) {
+  return worldGeneration === "random" ? "Random" : "Seeded";
 }
 
 function drawSplitButtons(leftLabel, rightLabel, y) {
@@ -324,6 +409,31 @@ function drawCollectionNotice() {
   ctx.textAlign = "left";
 }
 
+function drawWrapEffect() {
+  if (game.wrapTimer <= 0 && game.teleportPhase === "idle") return;
+  const progress = Math.max(0, Math.min(1, game.wrapTimer / 0.36));
+  ctx.lineWidth = strokeWidth(2 + progress * 3);
+  const points = game.teleportPhase === "zoomOut"
+    ? [{ x: game.wrapFromX, y: game.wrapFromY }]
+    : game.teleportPhase === "pan"
+      ? []
+      : game.teleportPhase === "zoomIn"
+        ? [{ x: game.wrapToX, y: game.wrapToY }]
+        : [
+          { x: game.wrapFromX, y: game.wrapFromY },
+          { x: game.wrapToX, y: game.wrapToY },
+        ];
+  for (const point of points) {
+    const x = worldToScreenX(point.x);
+    const y = worldToScreenY(point.y);
+    ctx.beginPath();
+    ctx.arc(x, y, z(14 + (1 - progress) * 28), 0, Math.PI * 2);
+    ctx.stroke();
+    line(x - z(18), y, x + z(18), y);
+    line(x, y - z(18), x, y + z(18));
+  }
+}
+
 export function draw() {
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   ctx.strokeStyle = "#000";
@@ -337,15 +447,17 @@ export function draw() {
   for (const projectile of projectiles) drawProjectile(projectile);
   for (const enemy of enemies) drawEnemy(enemy);
   drawDrone();
+  drawWrapEffect();
 
   for (const particle of particles) {
     const x = worldToScreenX(particle.x);
-    line(x - 3, particle.y, x + 3, particle.y);
-    line(x, particle.y - 3, x, particle.y + 3);
+    const y = worldToScreenY(particle.y);
+    line(x - z(3), y, x + z(3), y);
+    line(x, y - z(3), x, y + z(3));
   }
 
   drawPlayerCharacter();
-  drawUi();
+  if (game.state !== states.TITLE && game.state !== states.CUSTOMIZE) drawUi();
   drawCollectionNotice();
   drawScreenOverlay();
 }

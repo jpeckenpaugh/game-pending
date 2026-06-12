@@ -3,11 +3,18 @@ export const ctx = canvas.getContext("2d");
 
 export const world = {
   width: 2800,
+  height: 900,
   baseGroundY: 0,
   gravity: 1850,
   friction: 0.82,
   terrainStep: 160,
   terrain: [],
+  platforms: [],
+  ladders: [],
+  caves: [],
+  teleports: [],
+  spawnX: 80,
+  spawnY: 0,
 };
 
 export const player = {
@@ -23,13 +30,15 @@ export const player = {
   ammo: 10,
   facing: 1,
   onGround: true,
+  surfaceId: "ground",
   coyoteTimer: 0,
   jumpBuffer: 0,
   shootCooldown: 0,
   invulnerableFor: 0,
+  climbing: false,
 };
 
-export const camera = { x: 0 };
+export const camera = { x: 0, y: 0, zoom: 1 };
 export const keys = new Set();
 export const touches = new Map();
 export const projectiles = [];
@@ -74,15 +83,19 @@ export const customization = {
   name: "Game Pending",
   tagline: "Name Pending",
   startingPowerUps: 0,
+  level: 1,
   playerType: "original",
   weaponType: "gun",
+  worldGeneration: "seeded",
   selectedField: "name",
   returnState: states.TITLE,
   savedName: "Game Pending",
   savedTagline: "Name Pending",
   savedStartingPowerUps: 0,
+  savedLevel: 1,
   savedPlayerType: "original",
   savedWeaponType: "gun",
+  savedWorldGeneration: "seeded",
 };
 
 export const game = {
@@ -100,4 +113,17 @@ export const game = {
   pauseSelection: 0,
   levelCompleteSelection: 0,
   gameOverSelection: 0,
+  wrapTimer: 0,
+  wrapFromX: 0,
+  wrapFromY: 0,
+  wrapToX: 0,
+  wrapToY: 0,
+  teleportPhase: "idle",
+  teleportTimer: 0,
+  teleportDuration: 0,
+  teleportFromX: 0,
+  teleportFromY: 0,
+  teleportToX: 0,
+  teleportToY: 0,
+  teleportMoved: false,
 };

@@ -45,9 +45,9 @@ function startDroneRun() {
   drone.x = drone.direction === 1
     ? camera.x - 48
     : camera.x + window.innerWidth + 48;
-  drone.y = 46;
+  drone.y = camera.y + window.innerHeight * 0.25;
   drone.targetX = camera.x + window.innerWidth * 0.5;
-  drone.targetY = 92;
+  drone.targetY = camera.y + window.innerHeight * 0.25;
 }
 
 function updateDroneRecharge(dt) {

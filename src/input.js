@@ -102,7 +102,9 @@ function handleMenuAction(x, y) {
     }
     if (action) {
       selectCustomizeField(action);
-      if (action === "playerType" || action === "weaponType") cycleCustomizeOption(action);
+      if (action === "startingPowerUps" || action === "level" || action === "playerType" || action === "weaponType" || action === "worldGeneration") {
+        cycleCustomizeOption(action);
+      }
       return true;
     }
     return false;

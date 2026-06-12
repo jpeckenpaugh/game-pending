@@ -2,7 +2,7 @@ import { customization, enemies, game, player, powerUps, projectiles, states, wo
 import { nearestEnemy } from "./targeting.js";
 import { isDucking } from "./player.js";
 import { defeatEnemy } from "./enemies.js";
-import { groundAt } from "./terrain.js";
+import { landingSurfaceAt } from "./terrain.js";
 
 export function shoot() {
   if (game.state !== states.PLAYING || player.shootCooldown > 0 || player.ammo <= 0) return;
@@ -126,8 +126,8 @@ function projectileDistanceToEnemy(projectile, enemy) {
 function isExpired(projectile) {
   if (projectile.life != null && projectile.life <= 0) return true;
   if (projectile.x < -80 || projectile.x > world.width + 80) return true;
-  if (projectile.weaponType === "club" && projectile.y >= groundAt(projectile.x)) return true;
-  return projectile.y > world.baseGroundY + 220;
+  if (projectile.weaponType === "club" && landingSurfaceAt(projectile.x, projectile.previousY ?? projectile.y, projectile.y)) return true;
+  return projectile.y > world.height + 220;
 }
 
 function blocksProjectile(enemy, projectile) {

@@ -1,6 +1,6 @@
-import { ctx, customization, player, powerUps } from "./state.js";
+import { camera, ctx, customization, game, player, powerUps } from "./state.js";
 import { isDucking } from "./player.js";
-import { worldToScreenX } from "./terrain.js";
+import { worldToScreenX, worldToScreenY } from "./terrain.js";
 import { drawWeapon } from "./weapons.js";
 
 function line(x1, y1, x2, y2) {
@@ -10,7 +10,16 @@ function line(x1, y1, x2, y2) {
   ctx.stroke();
 }
 
+function z(value) {
+  return value * camera.zoom;
+}
+
+function strokeWidth(value) {
+  return Math.max(1, z(value));
+}
+
 export function drawPlayerCharacter() {
+  if (game.teleportPhase === "pan") return;
   if (customization.playerType === "croc") {
     drawCrocPlayer();
     return;
@@ -24,66 +33,66 @@ function shouldBlinkOut() {
 
 function drawOriginalPlayer() {
   const x = worldToScreenX(player.x);
-  const y = player.y;
+  const y = worldToScreenY(player.y);
   const ducking = isDucking();
   const stride = Math.sin(performance.now() / 90) * (Math.abs(player.vx) / 360);
   if (shouldBlinkOut()) return;
 
-  ctx.lineWidth = 3;
+  ctx.lineWidth = strokeWidth(3);
   if (ducking) {
     ctx.beginPath();
-    ctx.arc(x, y - 43, 10, 0, Math.PI * 2);
+    ctx.arc(x, y - z(43), z(10), 0, Math.PI * 2);
     ctx.stroke();
     if (powerUps.specs) {
-      line(x - 8, y - 44, x - 2, y - 44);
-      line(x + 2, y - 44, x + 8, y - 44);
+      line(x - z(8), y - z(44), x - z(2), y - z(44));
+      line(x + z(2), y - z(44), x + z(8), y - z(44));
     }
-    line(x, y - 33, x - 5 * player.facing, y - 18);
-    const weaponX = x + 22 * player.facing;
-    const weaponY = y - 24;
-    line(x - 5 * player.facing, y - 18, weaponX, weaponY);
-    line(x - 5 * player.facing, y - 18, x - 20, y);
-    line(x - 5 * player.facing, y - 18, x + 18, y);
+    line(x, y - z(33), x - z(5) * player.facing, y - z(18));
+    const weaponX = x + z(22) * player.facing;
+    const weaponY = y - z(24);
+    line(x - z(5) * player.facing, y - z(18), weaponX, weaponY);
+    line(x - z(5) * player.facing, y - z(18), x - z(20), y);
+    line(x - z(5) * player.facing, y - z(18), x + z(18), y);
     drawBoots(x, y, true);
-    drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, 1);
+    drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, camera.zoom);
     return;
   }
 
   ctx.beginPath();
-  ctx.arc(x, y - 62, 10, 0, Math.PI * 2);
+  ctx.arc(x, y - z(62), z(10), 0, Math.PI * 2);
   ctx.stroke();
   if (powerUps.specs) {
-    line(x - 8, y - 63, x - 2, y - 63);
-    line(x + 2, y - 63, x + 8, y - 63);
+    line(x - z(8), y - z(63), x - z(2), y - z(63));
+    line(x + z(2), y - z(63), x + z(8), y - z(63));
   }
-  line(x, y - 52, x, y - 24);
-  line(x, y - 43, x - 17 * player.facing, y - 34 + stride * 3);
-  const weaponX = x + 22 * player.facing;
-  const weaponY = y - 38 - stride * 3;
-  line(x, y - 43, weaponX, weaponY);
-  line(x, y - 24, x - 14, y);
-  line(x, y - 24, x + 16, y - Math.abs(stride) * 8);
+  line(x, y - z(52), x, y - z(24));
+  line(x, y - z(43), x - z(17) * player.facing, y - z(34) + z(stride * 3));
+  const weaponX = x + z(22) * player.facing;
+  const weaponY = y - z(38) - z(stride * 3);
+  line(x, y - z(43), weaponX, weaponY);
+  line(x, y - z(24), x - z(14), y);
+  line(x, y - z(24), x + z(16), y - z(Math.abs(stride) * 8));
   drawBoots(x, y, false);
-  drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, 1);
+  drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, camera.zoom);
 }
 
 function drawBoots(x, y, ducking) {
   if (!powerUps.boots) return;
   if (ducking) {
-    ctx.fillRect(x - 28, y - 8, 14, 8);
-    ctx.fillRect(x + 12, y - 8, 14, 8);
+    ctx.fillRect(x - z(28), y - z(8), z(14), z(8));
+    ctx.fillRect(x + z(12), y - z(8), z(14), z(8));
     return;
   }
-  ctx.fillRect(x - 22, y - 8, 14, 8);
-  ctx.fillRect(x + 10, y - 8, 14, 8);
+  ctx.fillRect(x - z(22), y - z(8), z(14), z(8));
+  ctx.fillRect(x + z(10), y - z(8), z(14), z(8));
 }
 
 function drawCrocPlayer() {
   if (shouldBlinkOut()) return;
 
   const x = worldToScreenX(player.x);
-  const y = player.y;
-  const scale = isDucking() ? 0.29 : 0.34;
+  const y = worldToScreenY(player.y);
+  const scale = (isDucking() ? 0.29 : 0.34) * camera.zoom;
   const yScale = isDucking() ? 0.74 : 1;
   const mirror = player.facing === -1 ? 1 : -1;
 
@@ -97,7 +106,7 @@ function drawCrocPlayer() {
 
   const handX = x + mirror * scale * (62 - 156);
   const handY = y + scale * yScale * (190 - 300);
-  drawWeapon(customization.weaponType, handX, handY, player.facing, 1.35);
+  drawWeapon(customization.weaponType, handX, handY, player.facing, 1.35 * camera.zoom);
 }
 
 function drawCrocBody() {

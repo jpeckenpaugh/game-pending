@@ -1,5 +1,5 @@
 import { enemies } from "./state.js";
-import { worldToScreenX } from "./terrain.js";
+import { worldToScreenX, worldToScreenY } from "./terrain.js";
 
 export function nearestEnemy(fromX, fromY) {
   let closest = null;
@@ -20,7 +20,14 @@ export function nearestEnemy(fromX, fromY) {
 export function visibleEnemy() {
   for (const enemy of enemies) {
     const screenX = worldToScreenX(enemy.x);
-    if (enemy.alive && screenX > -enemy.radius && screenX < window.innerWidth + enemy.radius) {
+    const screenY = worldToScreenY(enemy.y);
+    if (
+      enemy.alive
+      && screenX > -enemy.radius
+      && screenX < window.innerWidth + enemy.radius
+      && screenY > -enemy.radius
+      && screenY < window.innerHeight + enemy.radius
+    ) {
       return enemy;
     }
   }

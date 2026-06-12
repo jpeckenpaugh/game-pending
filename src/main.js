@@ -1,6 +1,6 @@
 import { camera, canvas, ctx, drops, enemies, game, player, states, world } from "./state.js";
 import { draw } from "./render.js";
-import { resizeCanvas, groundAt } from "./terrain.js";
+import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
 import { startLevel, showGameOver, showLevelComplete, startLevelClearCollection } from "./level.js";
 import { updateVestRecharge, absorbOrTakeHit } from "./powerups.js";
@@ -10,8 +10,22 @@ import { updateProjectiles } from "./projectiles.js";
 import { applyPlayerMovement, canStomp, jumpImpulse, playerDistanceTo } from "./player.js";
 import { addBurst, updateParticles } from "./effects.js";
 
+function titleZoomForContent() {
+  const contentBounds = worldContentBounds();
+  const contentHeight = Math.max(1, contentBounds.bottom - contentBounds.top);
+  return Math.min(1, window.innerHeight / contentHeight);
+}
+
 function update(dt) {
   if (game.messageTimer > 0) game.messageTimer -= dt;
+  if (game.wrapTimer > 0) game.wrapTimer = Math.max(0, game.wrapTimer - dt);
+  if (game.teleportPhase !== "idle") {
+    updateTeleport(dt);
+    updateCamera(dt);
+    updateParticles(dt);
+    return;
+  }
+  updateCamera(dt);
 
   if (game.state === states.LEVEL_COLLECTING) {
     updateLevelClearCollection(dt);
@@ -68,12 +82,79 @@ function update(dt) {
 
   updateParticles(dt);
 
-  camera.x += (player.x - window.innerWidth * 0.35 - camera.x) * Math.min(1, dt * 8);
-  camera.x = Math.max(0, Math.min(world.width - window.innerWidth, camera.x));
-
   if (game.enemiesRemaining === 0) {
     startLevelClearCollection();
   }
+}
+
+function updateTeleport(dt) {
+  game.teleportTimer += dt;
+  if (game.teleportTimer < game.teleportDuration) return;
+
+  if (game.teleportPhase === "zoomOut") {
+    game.teleportPhase = "pan";
+    game.teleportTimer = 0;
+    game.teleportDuration = 0.5;
+    return;
+  }
+
+  if (game.teleportPhase === "pan") {
+    player.x = game.teleportToX;
+    player.y = game.teleportToY;
+    player.previousY = player.y;
+    player.vx = 0;
+    player.vy = 0;
+    player.onGround = true;
+    player.surfaceId = "ground";
+    player.climbing = false;
+    game.teleportMoved = true;
+    game.wrapTimer = 0.36;
+    game.teleportPhase = "zoomIn";
+    game.teleportTimer = 0;
+    game.teleportDuration = 0.46;
+    return;
+  }
+
+  game.teleportPhase = "idle";
+  game.teleportTimer = 0;
+  game.teleportDuration = 0;
+  game.wrapTimer = 0;
+}
+
+function updateCamera(dt) {
+  const contentBounds = worldContentBounds();
+  const contentHeight = Math.max(1, contentBounds.bottom - contentBounds.top);
+  const titleZoom = titleZoomForContent();
+  let zoomTarget = game.state === states.PLAYING || game.state === states.LEVEL_COLLECTING
+    ? 1
+    : titleZoom;
+  if (game.teleportPhase === "zoomOut" || game.teleportPhase === "pan") zoomTarget = titleZoom;
+  if (game.teleportPhase === "zoomIn") zoomTarget = 1;
+  const cameraSpeed = game.teleportPhase !== "idle" ? 10 : (game.wrapTimer > 0 ? 28 : 8);
+  camera.zoom += (zoomTarget - camera.zoom) * Math.min(1, dt * 3.2);
+
+  const viewportWidth = window.innerWidth / camera.zoom;
+  const viewportHeight = window.innerHeight / camera.zoom;
+  const centeredStates = [states.TITLE, states.CUSTOMIZE, states.GAME_OVER, states.LEVEL_COMPLETE, states.PAUSED];
+  let targetX = centeredStates.includes(game.state)
+    ? world.width / 2 - viewportWidth / 2
+    : player.x - viewportWidth * 0.5;
+  let targetY = centeredStates.includes(game.state)
+    ? contentBounds.top + contentHeight / 2 - viewportHeight / 2
+    : player.y - viewportHeight * 0.55;
+
+  if (game.teleportPhase === "zoomOut") {
+    targetX = game.teleportFromX - viewportWidth * 0.5;
+    targetY = game.teleportFromY - viewportHeight * 0.55;
+  } else if (game.teleportPhase === "pan" || game.teleportPhase === "zoomIn") {
+    targetX = game.teleportToX - viewportWidth * 0.5;
+    targetY = game.teleportToY - viewportHeight * 0.55;
+  }
+
+  camera.x += (targetX - camera.x) * Math.min(1, dt * cameraSpeed);
+  camera.y += (targetY - camera.y) * Math.min(1, dt * cameraSpeed);
+  camera.x = Math.max(0, Math.min(world.width - viewportWidth, camera.x));
+  camera.y = Math.max(0, Math.min(world.height - viewportHeight, camera.y));
 }
 
 function updateLevelClearCollection(dt) {
@@ -118,4 +199,5 @@ window.addEventListener("resize", () => resizeCanvas(canvas, ctx));
 setupInput(canvas);
 resizeCanvas(canvas, ctx);
 startLevel(1);
+camera.zoom = titleZoomForContent();
 requestAnimationFrame(loop);

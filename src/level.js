@@ -1,31 +1,39 @@
-import { camera, customization, drone, drops, enemies, game, particles, player, projectiles, states, world } from "./state.js";
-import { buildTerrain, groundAt } from "./terrain.js";
+import { customization, drone, drops, enemies, game, particles, player, projectiles, states, world } from "./state.js";
+import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
 import { grantRandomPowerUp, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
 
 export function startLevel(nextLevel) {
   game.level = nextLevel;
+  customization.level = nextLevel;
   enemies.length = 0;
   projectiles.length = 0;
   drops.length = 0;
   particles.length = 0;
   drone.active = false;
   drone.phase = "idle";
+  game.wrapTimer = 0;
+  game.teleportPhase = "idle";
+  game.teleportTimer = 0;
+  game.teleportDuration = 0;
+  game.teleportMoved = false;
   game.enemiesRemaining = 10 + (game.level - 1) * 4;
-  world.width = Math.max(2200, 1500 + game.enemiesRemaining * 135);
+  world.width = Math.max(window.innerWidth * 3, 2200 + (game.level - 1) * 320 + game.enemiesRemaining * 42);
   buildTerrain();
 
-  player.x = 80;
-  player.y = groundAt(player.x);
+  player.x = world.spawnX;
+  player.y = world.spawnY;
   player.previousY = player.y;
   player.vx = 0;
   player.vy = 0;
   player.onGround = true;
+  player.surfaceId = "ground";
+  player.climbing = false;
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
   player.invulnerableFor = 1.2;
   player.ammo = Math.max(player.ammo, 10);
-  camera.x = 0;
+  centerCameraOnPlayer();
 
   spawnEnemies();
 
@@ -39,14 +47,14 @@ export function beginNewGame() {
   for (let i = 0; i < customization.startingPowerUps; i += 1) {
     grantRandomPowerUp();
   }
-  startLevel(1);
+  startLevel(customization.level);
   game.state = states.PLAYING;
 }
 
 export function returnToTitle() {
   resetPowerUps();
   player.ammo = 10;
-  startLevel(1);
+  startLevel(customization.level);
   game.state = states.TITLE;
   game.titleSelection = 0;
 }
