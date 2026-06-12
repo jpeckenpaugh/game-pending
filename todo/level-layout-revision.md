@@ -175,6 +175,52 @@
 - [x] Move the player out of the destination portal while spinning/growing/fading in.
 - [x] Run syntax checks after teleport movement animation update.
 
+## Target FPS Customize Option
+
+- [x] Add a `Target FPS` field to the Customize menu.
+- [x] Default Target FPS to `Auto`.
+- [x] Support `Auto`, `5`, `10`, `15`, `30`, `60`, and `120` FPS options.
+- [x] Throttle rendering to the selected target FPS while preserving capped update steps.
+- [x] Run syntax checks after Target FPS option.
+- [x] Run headless Customize option check for Target FPS default and cycle order.
+- [x] Add adaptive Auto mode that steps render FPS down under sustained load and back up after stable play.
+- [x] Run syntax checks after Auto FPS option.
+- [x] Run headless Customize option check for Auto FPS default and cycle order.
+
+## Projectile Visual Polish
+
+- [x] Render gun bullets as small squares instead of thin horizontal lines.
+- [x] Run syntax checks after gun bullet visual update.
+
+## Opponent Behavior Customize Option
+
+- [x] Add an `Opponent Behavior` field to the Customize menu.
+- [x] Default Opponent Behavior to `Mixed`.
+- [x] Support `Simple`, `Random`, `Bold`, `Shy`, and `Mixed` options.
+- [x] Preserve current repeated opponent movement as `Simple`.
+- [x] Add randomized movement variation for `Random`.
+- [x] Add near-player approach behavior for `Bold`.
+- [x] Add near-player retreat behavior for `Shy`.
+- [x] Randomly assign per-enemy intelligence when `Mixed` is selected.
+- [x] Run syntax checks after Opponent Intelligence option.
+- [x] Run headless spawn/update checks for opponent intelligence modes.
+- [x] Prevent Bold/Shy enemies from snapping back to spawn patrol positions when line of sight is lost.
+- [x] Make Bold/Shy detection use broader close-enough line-of-sight style checks.
+- [x] Run syntax checks after Bold/Shy fallback movement fix.
+- [x] Run headless check confirming Bold enemies chase, lose sight, and continue from current position.
+- [x] Add simple selected-row tooltips to the Customize menu.
+- [x] Run syntax checks after Customize label/default/tooltip updates.
+- [x] Run headless check confirming Opponent Behavior defaults to `Mixed`.
+
+## Spawning Locations Customize Option
+
+- [x] Add a `Spawning Locations` field to the Customize menu.
+- [x] Support `Standard` and `Randomized` spawning location options.
+- [x] Make `Standard` spread early spawns across ground, upper, and cave bands instead of consuming ordered ground-first candidates.
+- [x] Make `Randomized` shuffle all valid spawn locations.
+- [x] Run syntax checks after Spawning Locations option.
+- [x] Run headless spawn distribution checks for Standard and Randomized modes.
+
 ## Open Questions
 
 - [x] Use a hidden deterministic seed based on current settings and level for the first implementation.

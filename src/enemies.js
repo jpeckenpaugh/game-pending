@@ -1,4 +1,4 @@
-import { drops, enemies, game } from "./state.js";
+import { customization, drops, enemies, game, player } from "./state.js";
 import { addBurst } from "./effects.js";
 import { groundAt, nearTeleportBuffer, surfaceYAt, walkableSurfaces } from "./terrain.js";
 
@@ -14,6 +14,11 @@ export function spawnEnemies() {
     enemies.push({
       family,
       movement,
+      intelligence: intelligenceForEnemy(i),
+      aiDirection: Math.random() < 0.5 ? -1 : 1,
+      aiSpeed: 40 + Math.random() * 45,
+      aiTimer: 0.4 + Math.random() * 1.2,
+      aiJumpPhase: Math.random() * Math.PI * 2,
       facing: 1,
       x,
       y: spawn.y - radius,
@@ -30,6 +35,7 @@ export function spawnEnemies() {
 
 function enemySpawnPoints() {
   const points = [];
+  const grouped = { ground: [], upper: [], cave: [] };
   const safeStartHalfWidth = 280;
 
   for (const surface of walkableSurfaces()) {
@@ -41,21 +47,60 @@ function enemySpawnPoints() {
       const y = surfaceYAt(surface, x);
       if (surface.id === "ground" && Math.abs(x - groundCenter()) < safeStartHalfWidth) continue;
       if (surface.id === "ground" && nearTeleportBuffer(x, y, 220)) continue;
-      points.push({
+      const point = {
         x,
         y,
         surfaceId: surface.id,
         minX: surface.x + 24,
         maxX: surface.x + width - 24,
-      });
+      };
+      points.push(point);
+      grouped[spawnBandForSurface(surface.id)].push(point);
     }
   }
 
-  return points.length > 0 ? points : [{ x: 420, y: groundAt(420), surfaceId: "ground", minX: 60, maxX: 780 }];
+  if (points.length === 0) return [{ x: 420, y: groundAt(420), surfaceId: "ground", minX: 60, maxX: 780 }];
+  return customization.spawningLocations === "randomized"
+    ? shuffled(points)
+    : spreadSpawnPoints(grouped, points);
 }
 
 function groundCenter() {
   return walkableSurfaces()[0].width / 2;
+}
+
+function spawnBandForSurface(surfaceId) {
+  if (surfaceId === "ground") return "ground";
+  return surfaceId.includes("cave") ? "cave" : "upper";
+}
+
+function spreadSpawnPoints(grouped, fallback) {
+  const bands = ["ground", "upper", "cave"];
+  const spread = [];
+  const cursors = { ground: 0, upper: 0, cave: 0 };
+  let added = true;
+
+  while (added) {
+    added = false;
+    for (const band of bands) {
+      const group = grouped[band];
+      if (cursors[band] >= group.length) continue;
+      spread.push(group[cursors[band]]);
+      cursors[band] += 1;
+      added = true;
+    }
+  }
+
+  return spread.length > 0 ? spread : fallback;
+}
+
+function shuffled(points) {
+  const copy = [...points];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 function enemyFamilyForIndex(index) {
@@ -70,31 +115,89 @@ function enemyMovementForIndex(index) {
   return "walker";
 }
 
+function intelligenceForEnemy() {
+  if (customization.opponentIntelligence !== "mixed") return customization.opponentIntelligence;
+  const options = ["simple", "random", "bold", "shy"];
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 export function updateEnemyPositions(dt) {
   for (const enemy of enemies) {
     if (!enemy.alive) continue;
     const previousX = enemy.x;
-    if (enemy.movement === "runner") {
-      enemy.phase += dt * 4.2;
-      enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase) * 46, enemy.minX, enemy.maxX);
-      enemy.y = surfaceHeight(enemy) - enemy.radius;
-      updateFacing(enemy, previousX);
-      continue;
+    if ((enemy.intelligence || "simple") === "simple") {
+      updateSimpleEnemy(enemy, dt);
+    } else if (enemy.intelligence === "random") {
+      updateRandomEnemy(enemy, dt);
+    } else {
+      updateReactiveEnemy(enemy, dt, enemy.intelligence);
     }
-
-    if (enemy.movement === "hopper") {
-      enemy.phase += dt * 3;
-      enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase * 0.7) * 24, enemy.minX, enemy.maxX);
-      enemy.y = surfaceHeight(enemy) - enemy.radius - Math.max(0, Math.sin(enemy.phase)) * 36;
-      updateFacing(enemy, previousX);
-      continue;
-    }
-
-    enemy.phase += dt * 2.2;
-    enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase) * 28, enemy.minX, enemy.maxX);
-    enemy.y = surfaceHeight(enemy) - enemy.radius;
     updateFacing(enemy, previousX);
   }
+}
+
+function updateSimpleEnemy(enemy, dt) {
+  if (enemy.movement === "runner") {
+    enemy.phase += dt * 4.2;
+    enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase) * 46, enemy.minX, enemy.maxX);
+    enemy.y = surfaceHeight(enemy) - enemy.radius;
+    return;
+  }
+
+  if (enemy.movement === "hopper") {
+    enemy.phase += dt * 3;
+    enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase * 0.7) * 24, enemy.minX, enemy.maxX);
+    enemy.y = surfaceHeight(enemy) - enemy.radius - Math.max(0, Math.sin(enemy.phase)) * 36;
+    return;
+  }
+
+  enemy.phase += dt * 2.2;
+  enemy.x = clamp(enemy.baseX + Math.sin(enemy.phase) * 28, enemy.minX, enemy.maxX);
+  enemy.y = surfaceHeight(enemy) - enemy.radius;
+}
+
+function updateRandomEnemy(enemy, dt) {
+  enemy.aiTimer -= dt;
+  if (enemy.aiTimer <= 0) {
+    enemy.aiTimer = 0.18 + Math.random() * 1.1;
+    enemy.aiDirection = Math.random() < 0.25 ? 0 : (Math.random() < 0.5 ? -1 : 1);
+    enemy.aiSpeed = 20 + Math.random() * (enemy.movement === "runner" ? 120 : 80);
+    enemy.aiJumpPhase = Math.random() * Math.PI * 2;
+  }
+
+  enemy.phase += dt * (2.5 + enemy.aiSpeed / 45);
+  enemy.x = clamp(enemy.x + enemy.aiDirection * enemy.aiSpeed * dt, enemy.minX, enemy.maxX);
+  const jumpHeight = enemy.movement === "hopper" || Math.random() < 0.012 ? 42 : 18;
+  enemy.y = surfaceHeight(enemy) - enemy.radius - Math.max(0, Math.sin(enemy.phase + enemy.aiJumpPhase)) * jumpHeight;
+}
+
+function updateReactiveEnemy(enemy, dt, intelligence) {
+  const dx = player.x - enemy.x;
+  const playerCenterY = player.y - player.height * 0.5;
+  const dy = Math.abs(playerCenterY - enemy.y);
+  const sameSurface = player.surfaceId && player.surfaceId === enemy.surfaceId;
+  const canSeePlayer = Math.abs(dx) < 650 && (sameSurface || dy < 220);
+  if (!canSeePlayer) {
+    updateSimpleEnemyFromCurrent(enemy, dt);
+    return;
+  }
+
+  const direction = Math.sign(dx) || enemy.facing || 1;
+  const intent = intelligence === "shy" ? -direction : direction;
+  const speed = enemy.movement === "runner" ? 112 : 72;
+  enemy.phase += dt * (enemy.movement === "hopper" ? 3.2 : 2.4);
+  enemy.x = clamp(enemy.x + intent * speed * dt, enemy.minX, enemy.maxX);
+  const hop = enemy.movement === "hopper" ? Math.max(0, Math.sin(enemy.phase)) * 34 : 0;
+  enemy.y = surfaceHeight(enemy) - enemy.radius - hop;
+}
+
+function updateSimpleEnemyFromCurrent(enemy, dt) {
+  enemy.phase += dt * (enemy.movement === "runner" ? 4.2 : enemy.movement === "hopper" ? 3 : 2.2);
+  const speed = enemy.movement === "runner" ? 56 : enemy.movement === "hopper" ? 34 : 28;
+  const direction = Math.cos(enemy.phase) >= 0 ? 1 : -1;
+  enemy.x = clamp(enemy.x + direction * speed * dt, enemy.minX, enemy.maxX);
+  const hop = enemy.movement === "hopper" ? Math.max(0, Math.sin(enemy.phase)) * 36 : 0;
+  enemy.y = surfaceHeight(enemy) - enemy.radius - hop;
 }
 
 function surfaceHeight(enemy) {

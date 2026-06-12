@@ -1,4 +1,4 @@
-import { camera, canvas, ctx, drops, enemies, game, player, states, world } from "./state.js";
+import { camera, canvas, ctx, customization, drops, enemies, game, player, states, world } from "./state.js";
 import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
@@ -187,11 +187,61 @@ function updateLevelClearCollection(dt) {
   }
 }
 
+const fpsSteps = [5, 10, 15, 30, 60, 120];
+
+function selectedTargetFps() {
+  return customization.targetFps === "auto"
+    ? game.autoTargetFps
+    : Number(customization.targetFps) || 60;
+}
+
+function tuneAutoFps(elapsed, frameInterval, workMs) {
+  if (customization.targetFps !== "auto") {
+    game.autoFramePressure = 0;
+    game.autoStableFor = 0;
+    return;
+  }
+
+  const overloaded = elapsed > frameInterval * 1.45 || workMs > frameInterval * 0.9;
+  if (overloaded) {
+    game.autoFramePressure += 1;
+    game.autoStableFor = 0;
+  } else {
+    game.autoFramePressure = Math.max(0, game.autoFramePressure - 1);
+    game.autoStableFor += elapsed / 1000;
+  }
+
+  const currentIndex = fpsSteps.indexOf(game.autoTargetFps);
+  if (game.autoFramePressure >= 8 && currentIndex > 0) {
+    game.autoTargetFps = fpsSteps[currentIndex - 1];
+    game.autoFramePressure = 0;
+    game.autoStableFor = 0;
+  } else if (game.autoStableFor >= 6 && currentIndex < fpsSteps.length - 1) {
+    game.autoTargetFps = fpsSteps[currentIndex + 1];
+    game.autoFramePressure = 0;
+    game.autoStableFor = 0;
+  }
+}
+
 function loop(now) {
-  const dt = Math.min(0.033, (now - game.lastTime) / 1000);
+  const targetFps = selectedTargetFps();
+  const frameInterval = 1000 / targetFps;
+  const elapsed = now - game.lastTime;
+  if (elapsed < frameInterval) {
+    requestAnimationFrame(loop);
+    return;
+  }
+
+  let dt = Math.min(0.25, elapsed / 1000);
   game.lastTime = now;
-  update(dt);
+  const workStart = performance.now();
+  while (dt > 0) {
+    const step = Math.min(0.033, dt);
+    update(step);
+    dt -= step;
+  }
   draw();
+  tuneAutoFps(elapsed, frameInterval, performance.now() - workStart);
   requestAnimationFrame(loop);
 }
 

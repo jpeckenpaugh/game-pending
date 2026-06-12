@@ -187,7 +187,8 @@ function drawProjectile(projectile) {
   } else if (projectile.weaponType === "club") {
     drawWeapon("club", x, y, projectile.vx >= 0 ? 1 : -1, camera.zoom, projectile.rotation || 0);
   } else if (projectile.weaponType === "gun") {
-    ctx.fillRect(x - z(8), y - z(1), z(16), z(2));
+    const size = Math.max(3, z(7));
+    ctx.fillRect(x - size / 2, y - size / 2, size, size);
   } else {
     ctx.font = `${z(28)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     ctx.fillText("*", x - z(8), y + z(8));
@@ -360,17 +361,22 @@ function drawCustomizeScreen() {
   drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
   drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
   drawCustomizeRow("level", "Level", String(customization.level), startY + 126);
-  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 168);
-  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 210);
-  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + 252);
+  drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + 168);
+  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 210);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 252);
+  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + 294);
+  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + 336);
+  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + 378);
 
-  drawSplitButtons("SAVE", "CANCEL", Math.max(492, startY + 306));
+  drawSplitButtons("SAVE", "CANCEL", Math.max(618, startY + 432));
 
   drawHintLines(
     window.innerWidth < 620
-      ? ["Arrows select. Type text.", "Left/Right changes values.", "Enter saves. Esc cancels."]
-      : ["Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels."],
-    Math.max(572, startY + 374)
+      ? [customizeTooltip(customization.selectedField), "Left/Right changes values.", "Enter saves. Esc cancels."]
+      : [customizeTooltip(customization.selectedField), "Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels."],
+    Math.max(694, startY + 496),
+    "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+    20
   );
 }
 
@@ -386,6 +392,38 @@ function weaponTypeLabel(weaponType) {
 
 function worldGenerationLabel(worldGeneration) {
   return worldGeneration === "random" ? "Random" : "Seeded";
+}
+
+function targetFpsLabel(targetFps) {
+  return targetFps === "auto" ? "Auto" : String(targetFps);
+}
+
+function opponentIntelligenceLabel(opponentIntelligence) {
+  if (opponentIntelligence === "random") return "Random";
+  if (opponentIntelligence === "bold") return "Bold";
+  if (opponentIntelligence === "shy") return "Shy";
+  if (opponentIntelligence === "mixed") return "Mixed";
+  return "Simple";
+}
+
+function spawningLocationsLabel(spawningLocations) {
+  return spawningLocations === "randomized" ? "Randomized" : "Standard";
+}
+
+function customizeTooltip(field) {
+  if (field === "name") return "Sets the title shown on menu screens.";
+  if (field === "tagline") return "Sets the subtitle shown under the title.";
+  if (field === "startingPowerUps") return "Adds power-ups at the start of a new game.";
+  if (field === "level") return "Chooses the starting level and world size.";
+  if (field === "targetFps") return "Caps render rate; Auto adapts when the game gets busy.";
+  if (field === "playerType") return "Changes the player character art.";
+  if (field === "weaponType") return "Changes the weapon and projectile style.";
+  if (field === "opponentIntelligence") return "Controls whether opponents patrol, vary, chase, retreat, or mix behaviors.";
+  if (field === "spawningLocations") return "Standard spreads opponents by area; Randomized shuffles valid locations.";
+  if (field === "worldGeneration") return "Seeded repeats the same layout; Random varies each run.";
+  if (field === "save") return "Applies these settings.";
+  if (field === "cancel") return "Restores the previous settings.";
+  return "Customize game settings.";
 }
 
 function drawSplitButtons(leftLabel, rightLabel, y) {

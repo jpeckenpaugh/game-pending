@@ -28,7 +28,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 - `G`: grant a random power-up while playing
 - `R`: restart while playing
 
-Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, level, player character, weapon, and world generation mode (`Seeded` or `Random`).
+Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up count, level, target FPS (`Auto`, `5`, `10`, `15`, `30`, `60`, or `120`), player character, weapon, opponent behavior, spawning locations, and world generation mode (`Seeded` or `Random`).
 
 ## Project Structure
 

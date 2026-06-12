@@ -1,13 +1,16 @@
 import { customization, game, states } from "./state.js";
 import { startLevel } from "./level.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps", "level", "playerType", "weaponType", "worldGeneration", "save", "cancel"];
-const customizeRows = ["name", "tagline", "startingPowerUps", "level", "playerType", "weaponType", "worldGeneration"];
+export const customizeFields = ["name", "tagline", "startingPowerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
+const customizeRows = ["name", "tagline", "startingPowerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
 const playerTypes = ["original", "croc"];
 const weaponTypes = ["gun", "club", "wand"];
+const opponentIntelligenceTypes = ["simple", "random", "bold", "shy", "mixed"];
+const spawningLocationTypes = ["standard", "randomized"];
 const worldGenerationTypes = ["seeded", "random"];
+const targetFpsOptions = ["auto", 5, 10, 15, 30, 60, 120];
 
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
@@ -17,8 +20,11 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedTagline = customization.tagline;
   customization.savedStartingPowerUps = customization.startingPowerUps;
   customization.savedLevel = customization.level;
+  customization.savedTargetFps = customization.targetFps;
   customization.savedPlayerType = customization.playerType;
   customization.savedWeaponType = customization.weaponType;
+  customization.savedOpponentIntelligence = customization.opponentIntelligence;
+  customization.savedSpawningLocations = customization.spawningLocations;
   customization.savedWorldGeneration = customization.worldGeneration;
 }
 
@@ -34,8 +40,11 @@ export function cancelCustomize() {
   customization.tagline = customization.savedTagline;
   customization.startingPowerUps = customization.savedStartingPowerUps;
   customization.level = customization.savedLevel;
+  customization.targetFps = customization.savedTargetFps;
   customization.playerType = customization.savedPlayerType;
   customization.weaponType = customization.savedWeaponType;
+  customization.opponentIntelligence = customization.savedOpponentIntelligence;
+  customization.spawningLocations = customization.savedSpawningLocations;
   customization.worldGeneration = customization.savedWorldGeneration;
   game.state = customization.returnState;
 }
@@ -61,7 +70,7 @@ export function customizeActionAt(x, y) {
     if (inside(x, y, row)) return customizeRows[i];
   }
 
-  const buttonY = Math.max(492, startY + 306);
+  const buttonY = Math.max(618, startY + 432);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -135,7 +144,7 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
-  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType" || customization.selectedField === "worldGeneration") {
+  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType" || customization.selectedField === "worldGeneration" || customization.selectedField === "targetFps" || customization.selectedField === "opponentIntelligence" || customization.selectedField === "spawningLocations") {
     if (lower === "arrowleft") {
       selectRelativeOption(customization.selectedField, -1);
       return true;
@@ -205,7 +214,10 @@ function selectRelativeOption(field, offset) {
 
 function optionSetForField(field) {
   if (field === "weaponType") return weaponTypes;
+  if (field === "opponentIntelligence") return opponentIntelligenceTypes;
+  if (field === "spawningLocations") return spawningLocationTypes;
   if (field === "worldGeneration") return worldGenerationTypes;
+  if (field === "targetFps") return targetFpsOptions;
   return playerTypes;
 }
 
