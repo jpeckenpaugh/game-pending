@@ -92,9 +92,11 @@ function updateTeleport(dt) {
   if (game.teleportTimer < game.teleportDuration) return;
 
   if (game.teleportPhase === "zoomOut") {
+    game.teleportPanStartX = camera.x;
+    game.teleportPanStartY = camera.y;
     game.teleportPhase = "pan";
     game.teleportTimer = 0;
-    game.teleportDuration = 0.7;
+    game.teleportDuration = 1.05;
     return;
   }
 
@@ -109,12 +111,18 @@ function updateTeleport(dt) {
     player.climbing = false;
     game.teleportMoved = true;
     game.wrapTimer = 0.36;
+    game.teleportZoomInStartX = camera.x;
+    game.teleportZoomInStartY = camera.y;
+    game.teleportZoomInStartZoom = camera.zoom;
     game.teleportPhase = "zoomIn";
     game.teleportTimer = 0;
-    game.teleportDuration = 0.85;
+    game.teleportDuration = 1.05;
     return;
   }
 
+  camera.zoom = 1;
+  camera.x = clampedCameraX(game.teleportToX - window.innerWidth * 0.5, window.innerWidth);
+  camera.y = clampedCameraY(game.teleportToY - window.innerHeight * 0.55, window.innerHeight);
   game.teleportPhase = "idle";
   game.teleportTimer = 0;
   game.teleportDuration = 0;
@@ -131,7 +139,12 @@ function updateCamera(dt) {
   if (game.teleportPhase === "zoomOut" || game.teleportPhase === "pan") zoomTarget = titleZoom;
   if (game.teleportPhase === "zoomIn") zoomTarget = 1;
   const cameraSpeed = game.teleportPhase !== "idle" ? 10 : (game.wrapTimer > 0 ? 28 : 8);
-  camera.zoom += (zoomTarget - camera.zoom) * Math.min(1, dt * 3.2);
+  if (game.teleportPhase === "zoomIn") {
+    const progress = smoothstep(game.teleportDuration > 0 ? game.teleportTimer / game.teleportDuration : 1);
+    camera.zoom = game.teleportZoomInStartZoom + (1 - game.teleportZoomInStartZoom) * progress;
+  } else {
+    camera.zoom += (zoomTarget - camera.zoom) * Math.min(1, dt * 3.2);
+  }
 
   const viewportWidth = window.innerWidth / camera.zoom;
   const viewportHeight = window.innerHeight / camera.zoom;
@@ -146,15 +159,48 @@ function updateCamera(dt) {
   if (game.teleportPhase === "zoomOut") {
     targetX = game.teleportFromX - viewportWidth * 0.5;
     targetY = game.teleportFromY - viewportHeight * 0.55;
-  } else if (game.teleportPhase === "pan" || game.teleportPhase === "zoomIn") {
-    targetX = game.teleportToX - viewportWidth * 0.5;
-    targetY = game.teleportToY - viewportHeight * 0.55;
+  } else if (game.teleportPhase === "pan") {
+    const progress = smoothstep(game.teleportDuration > 0 ? game.teleportTimer / game.teleportDuration : 1);
+    const destinationX = clampedCameraX(game.teleportToX - viewportWidth * 0.5, viewportWidth);
+    const destinationY = clampedCameraY(game.teleportToY - viewportHeight * 0.55, viewportHeight);
+    targetX = game.teleportPanStartX + (destinationX - game.teleportPanStartX) * progress;
+    targetY = game.teleportPanStartY + (destinationY - game.teleportPanStartY) * progress;
+  } else if (game.teleportPhase === "zoomIn") {
+    const progress = smoothstep(game.teleportDuration > 0 ? game.teleportTimer / game.teleportDuration : 1);
+    const finalViewportWidth = window.innerWidth;
+    const finalViewportHeight = window.innerHeight;
+    const destinationX = clampedCameraX(game.teleportToX - finalViewportWidth * 0.5, finalViewportWidth);
+    const destinationY = clampedCameraY(game.teleportToY - finalViewportHeight * 0.55, finalViewportHeight);
+    targetX = game.teleportZoomInStartX + (destinationX - game.teleportZoomInStartX) * progress;
+    targetY = game.teleportZoomInStartY + (destinationY - game.teleportZoomInStartY) * progress;
   }
 
-  camera.x += (targetX - camera.x) * Math.min(1, dt * cameraSpeed);
-  camera.y += (targetY - camera.y) * Math.min(1, dt * cameraSpeed);
-  camera.x = Math.max(0, Math.min(world.width - viewportWidth, camera.x));
-  camera.y = Math.max(0, Math.min(world.height - viewportHeight, camera.y));
+  if (game.teleportPhase === "pan" || game.teleportPhase === "zoomIn") {
+    camera.x = targetX;
+    camera.y = targetY;
+  } else {
+    camera.x += (targetX - camera.x) * Math.min(1, dt * cameraSpeed);
+    camera.y += (targetY - camera.y) * Math.min(1, dt * cameraSpeed);
+  }
+  camera.x = clampedCameraX(camera.x, viewportWidth);
+  camera.y = clampedCameraY(camera.y, viewportHeight);
+}
+
+function clampedCameraX(x, viewportWidth) {
+  const max = world.width - viewportWidth;
+  if (max < 0) return max / 2;
+  return Math.max(0, Math.min(max, x));
+}
+
+function clampedCameraY(y, viewportHeight) {
+  const max = world.height - viewportHeight;
+  if (max < 0) return max / 2;
+  return Math.max(0, Math.min(max, y));
+}
+
+function smoothstep(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
 }
 
 function updateLevelClearCollection(dt) {

@@ -270,6 +270,17 @@
 - [x] Match Drone pick-three icon to in-game drone artwork.
 - [x] Run syntax checks after Drone pick-three icon update.
 - [x] Run headless render check for Drone pick-three icon.
+- [x] Move Level, Ammo, and Enemies into one framed top HUD row.
+- [x] Move active Power Ups into a framed bottom icon HUD.
+- [x] Replace Power Up HUD labels with power-up artwork and level markers.
+- [x] Add charge lines for Boots, Shield, and Drone HUD icons.
+- [x] Run syntax checks after HUD layout update.
+- [x] Run headless render check for HUD power icons and charge lines.
+- [x] Smoke test game page after HUD layout update.
+- [x] Fix zoomed-out teleport terrain rendering so ground does not disappear at viewport edges.
+- [x] Smooth teleport pan and zoom-in camera handoffs.
+- [x] Run syntax checks after teleport camera smoothing.
+- [x] Capture visual teleport sequence after camera smoothing.
 - [x] Extend manual weapon aiming directions to gun and wand.
 - [x] Preserve grounded crouch/down as forward fire for gun and wand.
 - [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.

@@ -1,6 +1,5 @@
 import { camera, ctx, customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { groundAt, worldToScreenX, worldToScreenY } from "./terrain.js";
-import { powerUpSummary } from "./powerups.js";
 import { drawPlayerCharacter } from "./playerCharacters.js";
 import { drawWeapon } from "./weapons.js";
 
@@ -21,7 +20,7 @@ function strokeWidth(value) {
 
 function drawTerrain() {
   const startX = Math.max(0, camera.x - 80);
-  const endX = Math.min(world.width, camera.x + window.innerWidth + 80);
+  const endX = Math.min(world.width, camera.x + window.innerWidth / camera.zoom + 80);
   const first = Math.floor(startX / 40) * 40;
 
   ctx.lineWidth = strokeWidth(3);
@@ -209,13 +208,8 @@ function drawDrone() {
 
 function drawUi() {
   ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
-  ctx.lineWidth = 2;
-  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText(`Ammo: ${player.ammo}`, 18, 28);
-  ctx.fillText(`Level: ${game.level}`, 18, 52);
-  ctx.fillText(`Enemies: ${game.enemiesRemaining}`, 18, 76);
-  ctx.fillText(`Power: ${powerUpSummary()}`, 18, 124);
-  drawRechargeBars(18, 138);
+  drawHeaderHud();
+  drawPowerHud();
 
   const progressWidth = Math.min(260, window.innerWidth - 36);
   ctx.strokeRect(18, 92, progressWidth, 8);
@@ -224,31 +218,114 @@ function drawUi() {
   if (game.messageTimer > 0) {
     ctx.font = "18px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
     ctx.textAlign = "center";
-    ctx.fillText(game.message, window.innerWidth / 2, 34);
+    ctx.fillText(game.message, window.innerWidth / 2, 72);
     ctx.textAlign = "left";
   }
 
   if (window.matchMedia("(pointer: coarse)").matches) {
     ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    ctx.fillText("Left: move  |  upper right: jump  |  lower middle: duck  |  lower right: shoot", 18, window.innerHeight - 18);
+    const hintY = activePowerSlots().length > 0 ? window.innerHeight - 92 : window.innerHeight - 18;
+    ctx.fillText("Left: move  |  upper right: jump  |  lower middle: duck  |  lower right: shoot", 18, hintY);
   }
 }
 
-function drawRechargeBars(x, y) {
-  let offset = 0;
-  offset += drawRechargeBar("Drone", powerUps.droneLevel, powerUps.droneCharges, powerUps.droneRecharge, x, y + offset);
-  drawRechargeBar("Shield", powerUps.shieldLevel, powerUps.shieldCharges, powerUps.shieldRecharge, x, y + offset);
+function drawHeaderHud() {
+  const margin = 12;
+  const width = window.innerWidth - margin * 2;
+  const height = 36;
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.84)";
+  ctx.fillRect(margin, 10, width, height);
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(margin, 10, width, height);
+  ctx.fillStyle = "#000";
+  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(`Level ${game.level}`, margin + 12, 33);
+  ctx.textAlign = "center";
+  ctx.fillText(`Ammo ${player.ammo}`, window.innerWidth / 2, 33);
+  ctx.textAlign = "right";
+  ctx.fillText(`Enemies ${game.enemiesRemaining}`, margin + width - 12, 33);
+  ctx.textAlign = "left";
+  ctx.restore();
 }
 
-function drawRechargeBar(label, levelCount, charges, recharge, x, y) {
-  if (levelCount === 0 || charges >= levelCount) return 0;
-  const width = 120;
-  const progress = Math.max(0, Math.min(1, recharge / 10));
-  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText(label, x, y + 9);
-  ctx.strokeRect(x + 50, y, width, 8);
-  ctx.fillRect(x + 50, y, width * progress, 8);
-  return 16;
+function drawPowerHud() {
+  const slots = activePowerSlots();
+  if (slots.length === 0) return;
+  const slotWidth = 62;
+  const slotHeight = 54;
+  const gap = 12;
+  const totalWidth = slots.length * slotWidth + (slots.length - 1) * gap;
+  const x = (window.innerWidth - totalWidth) / 2;
+  const y = window.innerHeight - slotHeight - 14;
+  const framePadding = 8;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.84)";
+  ctx.fillRect(x - framePadding, y - framePadding, totalWidth + framePadding * 2, slotHeight + framePadding * 2);
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x - framePadding, y - framePadding, totalWidth + framePadding * 2, slotHeight + framePadding * 2);
+  ctx.fillStyle = "#000";
+
+  for (let i = 0; i < slots.length; i += 1) {
+    const slotX = x + i * (slotWidth + gap);
+    drawPowerHudSlot(slots[i], slotX, y, slotWidth, slotHeight);
+  }
+  ctx.restore();
+}
+
+function activePowerSlots() {
+  const slots = [];
+  if (powerUps.bootsLevel) {
+    slots.push({
+      type: "boots",
+      level: powerUps.bootsLevel,
+      charge: powerUps.bootsLevel > 0 ? player.airJumpsRemaining / powerUps.bootsLevel : null,
+    });
+  }
+  if (powerUps.specs) slots.push({ type: "specs" });
+  if (powerUps.radar) slots.push({ type: "radar" });
+  if (powerUps.shieldLevel) {
+    slots.push({
+      type: "shield",
+      level: powerUps.shieldLevel,
+      charge: smoothChargeRatio(powerUps.shieldLevel, powerUps.shieldCharges, powerUps.shieldRecharge),
+    });
+  }
+  if (powerUps.droneLevel) {
+    slots.push({
+      type: "drone",
+      level: powerUps.droneLevel,
+      charge: smoothChargeRatio(powerUps.droneLevel, powerUps.droneCharges, powerUps.droneRecharge),
+    });
+  }
+  return slots;
+}
+
+function smoothChargeRatio(level, charges, recharge) {
+  if (level <= 0) return null;
+  const partial = charges < level ? Math.min(1, recharge / 10) : 0;
+  return Math.max(0, Math.min(1, (charges + partial) / level));
+}
+
+function drawPowerHudSlot(slot, x, y, width, height) {
+  drawPowerIcon(slot.type, x + width / 2, y + 22, 0.72);
+  if (slot.level) {
+    ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    ctx.textAlign = "left";
+    ctx.fillText(`+${slot.level}`, x + width - 18, y + 16);
+  }
+  if (slot.charge != null) {
+    const barX = x + 8;
+    const barY = y + height - 10;
+    const barWidth = width - 16;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(barX, barY, barWidth, 5);
+    ctx.fillRect(barX, barY, barWidth * Math.max(0, Math.min(1, slot.charge)), 5);
+  }
 }
 
 function drawCenteredText(lines, top) {
@@ -388,9 +465,10 @@ function wrapCenteredText(text, x, y, maxWidth, lineHeight) {
   if (line) ctx.fillText(line, x, lineY);
 }
 
-function drawPowerIcon(type, x, y) {
+function drawPowerIcon(type, x, y, scale = 1) {
   ctx.save();
   ctx.translate(x, y);
+  ctx.scale(scale, scale);
   ctx.lineWidth = 2;
   if (type === "boots") {
     ctx.fillRect(-20, 4, 16, 9);

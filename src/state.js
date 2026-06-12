@@ -150,5 +150,10 @@ export const game = {
   teleportFromY: 0,
   teleportToX: 0,
   teleportToY: 0,
+  teleportPanStartX: 0,
+  teleportPanStartY: 0,
+  teleportZoomInStartX: 0,
+  teleportZoomInStartY: 0,
+  teleportZoomInStartZoom: 1,
   teleportMoved: false,
 };

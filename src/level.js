@@ -16,6 +16,11 @@ export function startLevel(nextLevel) {
   game.teleportPhase = "idle";
   game.teleportTimer = 0;
   game.teleportDuration = 0;
+  game.teleportPanStartX = 0;
+  game.teleportPanStartY = 0;
+  game.teleportZoomInStartX = 0;
+  game.teleportZoomInStartY = 0;
+  game.teleportZoomInStartZoom = 1;
   game.teleportMoved = false;
   game.enemiesRemaining = 10 + (game.level - 1) * 4;
   world.width = Math.max(window.innerWidth * 3, 2200 + (game.level - 1) * 320 + game.enemiesRemaining * 42);
