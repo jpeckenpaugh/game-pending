@@ -299,8 +299,8 @@ function drawScreenOverlay() {
     drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62), game.titleSelection === 1);
     drawHintLines(
       window.innerWidth < 560
-        ? ["Move: A/D or arrows", "Jump: W/Up  Duck: S/Down", "Shoot: Space"]
-        : ["Move: A/D or arrows    Jump: W/Up    Duck: S/Down    Shoot: Space"],
+        ? ["Move: A/D or arrows", "Jump: Command  Aim/climb: W/Up S/Down", "Shoot: Space"]
+        : ["Move: A/D or arrows    Jump: Command    Aim/climb: W/Up S/Down    Shoot: Space"],
       Math.max(366, window.innerHeight * 0.46 + 148),
       "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       20

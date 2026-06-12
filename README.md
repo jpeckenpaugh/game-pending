@@ -21,7 +21,8 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 ## Controls
 
 - `A` / `D` or Left / Right: move
-- `W` / Up: jump or climb up ladders
+- Command: jump
+- `W` / Up: aim up or climb up ladders
 - `S` / Down: duck, climb down ladders, or enter a ladder from above
 - Space: shoot
 - Enter: pause / activate menu selection

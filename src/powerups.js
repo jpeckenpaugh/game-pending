@@ -6,6 +6,7 @@ export function resetPowerUps() {
   powerUps.shieldCharges = 0;
   powerUps.shieldRecharge = 0;
   powerUps.specs = 0;
+  powerUps.radar = 0;
   powerUps.droneLevel = 0;
   powerUps.droneCharges = 0;
   powerUps.droneRecharge = 0;
@@ -35,6 +36,12 @@ export function grantRandomPowerUp() {
     powerUps.droneCharges = Math.min(powerUps.droneLevel, powerUps.droneCharges + 1);
     powerUps.droneRecharge = powerUps.droneCharges < powerUps.droneLevel ? powerUps.droneRecharge : 0;
     game.lastPowerUp = `Drone Lv ${powerUps.droneLevel}`;
+    return game.lastPowerUp;
+  }
+
+  if (type === "radar") {
+    powerUps.radar = 1;
+    game.lastPowerUp = "Radar";
     return game.lastPowerUp;
   }
 
@@ -101,6 +108,7 @@ export function powerUpSummary() {
   const active = [];
   if (powerUps.boots) active.push("Boots");
   if (powerUps.specs) active.push("Specs");
+  if (powerUps.radar) active.push("Radar");
   if (powerUps.droneLevel) active.push(`Drone ${powerUps.droneCharges}/${powerUps.droneLevel}`);
   if (powerUps.shieldLevel) active.push(`Shield ${powerUps.shieldCharges}/${powerUps.shieldLevel}`);
   return active.length > 0 ? active.join("  ") : "none";

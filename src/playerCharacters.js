@@ -1,4 +1,4 @@
-import { camera, ctx, customization, game, player, powerUps, world } from "./state.js";
+import { camera, ctx, customization, enemies, game, keys, player, powerUps, touches, world } from "./state.js";
 import { isDucking } from "./player.js";
 import { worldToScreenX, worldToScreenY } from "./terrain.js";
 import { drawWeapon } from "./weapons.js";
@@ -104,6 +104,8 @@ function drawOriginalPlayer() {
   if (ducking) {
     const amuletX = x - z(4) * player.facing;
     const amuletY = y - z(27);
+    const radarX = x - z(16) * player.facing;
+    const radarY = y - z(18);
     drawShieldPulse(amuletX, amuletY);
     ctx.beginPath();
     ctx.arc(x, y - z(43), z(10), 0, Math.PI * 2);
@@ -116,8 +118,9 @@ function drawOriginalPlayer() {
     drawShieldAmulet(amuletX, amuletY);
     line(x - z(5) * player.facing, y - z(18), x - z(20), y);
     line(x - z(5) * player.facing, y - z(18), x + z(18), y);
+    drawRadarWatch(radarX, radarY);
     drawBoots(x, y, true);
-    drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, camera.zoom);
+    drawHeldWeapon(weaponX, weaponY);
     return;
   }
 
@@ -130,14 +133,17 @@ function drawOriginalPlayer() {
   const amuletY = y - z(38);
   drawShieldPulse(amuletX, amuletY);
   drawShieldAmulet(amuletX, amuletY);
-  line(x, y - z(43), x - z(17) * player.facing, y - z(34) + z(stride * 3));
+  const radarX = x - z(17) * player.facing;
+  const radarY = y - z(34) + z(stride * 3);
+  line(x, y - z(43), radarX, radarY);
+  drawRadarWatch(radarX, radarY);
   const weaponX = x + z(22) * player.facing;
   const weaponY = y - z(38) - z(stride * 3);
   line(x, y - z(43), weaponX, weaponY);
   line(x, y - z(24), x - z(14), y);
   line(x, y - z(24), x + z(16), y - z(Math.abs(stride) * 8));
   drawBoots(x, y, false);
-  drawWeapon(customization.weaponType, weaponX, weaponY, player.facing, camera.zoom);
+  drawHeldWeapon(weaponX, weaponY);
 }
 
 function drawBoots(x, y, ducking) {
@@ -205,6 +211,93 @@ function drawShieldAmulet(x, y) {
   ctx.lineWidth = previousLineWidth;
 }
 
+function drawRadarWatch(x, y) {
+  if (!powerUps.radar) return;
+  const previousLineWidth = ctx.lineWidth;
+  const radius = z(6);
+  ctx.lineWidth = strokeWidth(1.6);
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const target = nearestRadarTarget();
+  if (target) {
+    const angle = Math.atan2(target.y - player.y, target.x - player.x);
+    const dotRadius = z(5);
+    const dotX = x + Math.cos(angle) * radius;
+    const dotY = y + Math.sin(angle) * radius;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.lineWidth = previousLineWidth;
+}
+
+function drawHeldWeapon(x, y, scale = camera.zoom) {
+  const aim = customization.weaponType === "gun" ? heldWeaponAim() : null;
+  drawWeapon(customization.weaponType, x, y, aim?.facing ?? player.facing, scale, aim?.rotation ?? 0);
+}
+
+function heldWeaponAim() {
+  const direction = heldWeaponAimDirection();
+  if (!direction) return null;
+  const facing = direction.x === 0 ? player.facing : direction.x > 0 ? 1 : -1;
+  return {
+    facing,
+    rotation: Math.atan2(direction.y, Math.abs(direction.x)),
+  };
+}
+
+function heldWeaponAimDirection() {
+  const x = heldWeaponHorizontalAxis();
+  const y = heldWeaponVerticalAxis();
+  if (x === 0 && y === 0) return null;
+  return { x, y };
+}
+
+function heldWeaponHorizontalAxis() {
+  let axis = 0;
+  if (keys.has("arrowleft") || keys.has("a")) axis -= 1;
+  if (keys.has("arrowright") || keys.has("d")) axis += 1;
+
+  for (const zone of touches.values()) {
+    if (zone === "left") axis -= 1;
+    if (zone === "right") axis += 1;
+  }
+
+  return Math.max(-1, Math.min(1, axis));
+}
+
+function heldWeaponVerticalAxis() {
+  let axis = 0;
+  if (keys.has("arrowup") || keys.has("w")) axis -= 1;
+  if (keys.has("arrowdown") || keys.has("s")) axis += 1;
+
+  for (const zone of touches.values()) {
+    if (zone === "jump") axis -= 1;
+    if (zone === "duck") axis += 1;
+  }
+
+  if (axis > 0 && isDucking()) return 0;
+  return Math.max(-1, Math.min(1, axis));
+}
+
+function nearestRadarTarget() {
+  let nearest = null;
+  let nearestDistanceSq = Infinity;
+  for (const enemy of enemies) {
+    if (!enemy.alive) continue;
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const distanceSq = dx * dx + dy * dy;
+    if (distanceSq < nearestDistanceSq) {
+      nearest = enemy;
+      nearestDistanceSq = distanceSq;
+    }
+  }
+  return nearest;
+}
+
 function drawCrocPlayer() {
   if (shouldBlinkOut()) return;
 
@@ -224,7 +317,7 @@ function drawCrocPlayer() {
 
   const handX = x + mirror * scale * (62 - 156);
   const handY = y + scale * yScale * (190 - 300);
-  drawWeapon(customization.weaponType, handX, handY, player.facing, 1.35 * camera.zoom);
+  drawHeldWeapon(handX, handY, 1.35 * camera.zoom);
 }
 
 function drawCrocBody() {

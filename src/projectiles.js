@@ -1,4 +1,4 @@
-import { customization, enemies, game, player, powerUps, projectiles, states, world } from "./state.js";
+import { customization, enemies, game, keys, player, powerUps, projectiles, states, touches, world } from "./state.js";
 import { nearestEnemy } from "./targeting.js";
 import { isDucking } from "./player.js";
 import { defeatEnemy } from "./enemies.js";
@@ -33,9 +33,13 @@ export function shoot() {
 }
 
 function shotVelocity(shotY, weaponType) {
-  if (weaponType === "club") return clubVelocity(shotY);
-
   const speed = weaponType === "gun" ? 3040 : 760;
+  if (weaponType === "club") return clubVelocity();
+
+  const direction = weaponAimDirection();
+  if (direction) return velocityFromDirection(direction, speed);
+  if (groundedDownAimSuppressed()) return { vx: player.facing * speed, vy: 0 };
+
   const target = powerUps.specs ? nearestEnemy(player.x, shotY) : null;
   if (!target) return { vx: player.facing * speed, vy: 0 };
 
@@ -46,10 +50,60 @@ function shotVelocity(shotY, weaponType) {
   return { vx: (dx / distance) * speed, vy: (dy / distance) * speed };
 }
 
-function clubVelocity(shotY) {
-  const target = powerUps.specs ? nearestEnemy(player.x, shotY) : null;
-  if (target) player.facing = target.x >= player.x ? 1 : -1;
-  return { vx: player.facing * 700, vy: -90 };
+function clubVelocity() {
+  const direction = weaponAimDirection();
+  if (!direction) return { vx: player.facing * 700, vy: -90 };
+
+  return velocityFromDirection(direction, 700);
+}
+
+function velocityFromDirection(direction, speed) {
+  const distance = Math.max(1, Math.hypot(direction.x, direction.y));
+  if (direction.x !== 0) player.facing = direction.x > 0 ? 1 : -1;
+  return { vx: (direction.x / distance) * speed, vy: (direction.y / distance) * speed };
+}
+
+function weaponAimDirection() {
+  const x = weaponAimHorizontalAxis();
+  const y = weaponAimVerticalAxis();
+  if (x === 0 && y === 0) return null;
+  return { x, y };
+}
+
+function weaponAimHorizontalAxis() {
+  let axis = 0;
+  if (keys.has("arrowleft") || keys.has("a")) axis -= 1;
+  if (keys.has("arrowright") || keys.has("d")) axis += 1;
+
+  for (const zone of touches.values()) {
+    if (zone === "left") axis -= 1;
+    if (zone === "right") axis += 1;
+  }
+
+  return Math.max(-1, Math.min(1, axis));
+}
+
+function weaponAimVerticalAxis() {
+  let axis = 0;
+  if (keys.has("arrowup") || keys.has("w")) axis -= 1;
+  if (keys.has("arrowdown") || keys.has("s")) axis += 1;
+
+  for (const zone of touches.values()) {
+    if (zone === "jump") axis -= 1;
+    if (zone === "duck") axis += 1;
+  }
+
+  if (axis > 0 && isDucking()) return 0;
+  return Math.max(-1, Math.min(1, axis));
+}
+
+function groundedDownAimSuppressed() {
+  if (!isDucking()) return false;
+  if (keys.has("arrowdown") || keys.has("s")) return true;
+  for (const zone of touches.values()) {
+    if (zone === "duck") return true;
+  }
+  return false;
 }
 
 function projectileLife(weaponType) {

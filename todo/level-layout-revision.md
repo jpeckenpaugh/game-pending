@@ -213,6 +213,44 @@
 - [x] Move Shield pulse source from wrist transmitter to chest amulet.
 - [x] Run syntax checks after Shield amulet artwork revision.
 - [x] Smoke test game page after Shield amulet artwork revision.
+- [x] Add Radar power-up to the power-up pool.
+- [x] Draw Radar as an opposite-arm watch with a directional dot.
+- [x] Aim Radar dot at the nearest living enemy anywhere in the world.
+- [x] Run syntax checks after Radar power-up wiring.
+- [x] Run headless Radar state/pool/summary check.
+- [x] Smoke test game page after Radar power-up wiring.
+- [x] Increase Radar directional dot size for readability.
+- [x] Run syntax checks after Radar dot size revision.
+- [x] Disable Specs auto-turn targeting for club throws.
+- [x] Run syntax checks after club auto-turn revision.
+- [x] Run headless club throw facing check with Specs owned.
+- [x] Make club throws respond to held up/down direction.
+- [x] Run syntax checks after directional club throw revision.
+- [x] Run headless directional club throw checks.
+- [x] Preserve forward club throw when crouched on the ground.
+- [x] Support down club throws while airborne or climbing.
+- [x] Support diagonal club throws with combined vertical and horizontal input.
+- [x] Run syntax checks after expanded club direction rules.
+- [x] Run headless checks for crouch, air-down, climb-down, and diagonals.
+- [x] Move keyboard jump from Up/W to dedicated `J` key so Up/W can aim club throws.
+- [x] Update control text and README for dedicated jump key.
+- [x] Run syntax checks after dedicated jump key change.
+- [x] Run headless input check for `J` jump and `W` upward club aim.
+- [x] Change default keyboard jump from `J` to `Z`.
+- [x] Run syntax checks after `Z` jump key change.
+- [x] Run headless input check for `Z` jump and `W` upward club aim.
+- [x] Change default keyboard jump from `Z` to Command/Meta.
+- [x] Run syntax checks after Command jump key change.
+- [x] Run headless input check for Command jump and `W` upward club aim.
+- [x] Extend manual weapon aiming directions to gun and wand.
+- [x] Preserve grounded crouch/down as forward fire for gun and wand.
+- [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.
+- [x] Run syntax checks after gun/wand directional aiming update.
+- [x] Run headless gun/wand directional aiming checks.
+- [x] Rotate held gun artwork to match manual 8-direction aim.
+- [x] Run syntax checks after held gun aim artwork update.
+- [x] Run headless held gun render check with directional inputs.
+- [x] Smoke test game page after held gun aim artwork update.
 
 ## Opponent Behavior Customize Option
 
