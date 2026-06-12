@@ -1,8 +1,12 @@
 import { customization, game, states } from "./state.js";
 import { startLevel } from "./level.js";
 
-export const customizeFields = ["name", "tagline", "startingPowerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
-const customizeRows = ["name", "tagline", "startingPowerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
+const mainCustomizeFields = ["name", "tagline", "powerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
+const mainCustomizeRows = ["name", "tagline", "powerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
+const powerCustomizeFields = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
+const powerCustomizeRows = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
+export const customizeFields = [...mainCustomizeFields, ...powerCustomizeFields];
+const customizeRowHeight = 34;
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
 const playerTypes = ["original", "croc"];
@@ -15,10 +19,15 @@ const targetFpsOptions = ["auto", 5, 10, 15, 30, 60, 120];
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
   customization.selectedField = "name";
+  customization.customizeMenu = "main";
   customization.returnState = returnState;
   customization.savedName = customization.name;
   customization.savedTagline = customization.tagline;
-  customization.savedStartingPowerUps = customization.startingPowerUps;
+  customization.savedStartingBootsLevel = customization.startingBootsLevel;
+  customization.savedStartingSpecs = customization.startingSpecs;
+  customization.savedStartingRadar = customization.startingRadar;
+  customization.savedStartingShieldLevel = customization.startingShieldLevel;
+  customization.savedStartingDroneLevel = customization.startingDroneLevel;
   customization.savedLevel = customization.level;
   customization.savedTargetFps = customization.targetFps;
   customization.savedPlayerType = customization.playerType;
@@ -32,13 +41,18 @@ export function saveCustomize() {
   if (customization.returnState === states.TITLE || customization.returnState === states.PAUSED) {
     startLevel(customization.level);
   }
+  customization.customizeMenu = "main";
   game.state = customization.returnState;
 }
 
 export function cancelCustomize() {
   customization.name = customization.savedName;
   customization.tagline = customization.savedTagline;
-  customization.startingPowerUps = customization.savedStartingPowerUps;
+  customization.startingBootsLevel = customization.savedStartingBootsLevel;
+  customization.startingSpecs = customization.savedStartingSpecs;
+  customization.startingRadar = customization.savedStartingRadar;
+  customization.startingShieldLevel = customization.savedStartingShieldLevel;
+  customization.startingDroneLevel = customization.savedStartingDroneLevel;
   customization.level = customization.savedLevel;
   customization.targetFps = customization.savedTargetFps;
   customization.playerType = customization.savedPlayerType;
@@ -46,6 +60,7 @@ export function cancelCustomize() {
   customization.opponentIntelligence = customization.savedOpponentIntelligence;
   customization.spawningLocations = customization.savedSpawningLocations;
   customization.worldGeneration = customization.savedWorldGeneration;
+  customization.customizeMenu = "main";
   game.state = customization.returnState;
 }
 
@@ -58,19 +73,21 @@ export function titleButtonAt(x, y) {
 }
 
 export function customizeActionAt(x, y) {
-  const startY = Math.max(170, window.innerHeight * 0.28);
-  const rowHeight = 42;
-  for (let i = 0; i < customizeRows.length; i += 1) {
+  const startY = Math.max(132, window.innerHeight * 0.19);
+  const rows = currentRows();
+  for (let i = 0; i < rows.length; i += 1) {
     const row = {
       x: Math.max(24, window.innerWidth * 0.5 - 260),
-      y: startY + i * rowHeight,
+      y: startY + i * customizeRowHeight,
       width: Math.min(520, window.innerWidth - 48),
       height: 32,
     };
-    if (inside(x, y, row)) return customizeRows[i];
+    if (inside(x, y, row)) return rows[i];
   }
 
-  const buttonY = Math.max(618, startY + 432);
+  if (customization.customizeMenu === "powerUps") return "";
+
+  const buttonY = Math.max(startY + mainCustomizeRows.length * customizeRowHeight + 24, window.innerHeight - 112);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -81,6 +98,10 @@ export function handleCustomizeKey(event) {
   const lower = key.toLowerCase();
 
   if (lower === "escape") {
+    if (customization.customizeMenu === "powerUps") {
+      closePowerUpsMenu();
+      return true;
+    }
     cancelCustomize();
     return true;
   }
@@ -113,6 +134,8 @@ export function handleCustomizeKey(event) {
   if (lower === "enter") {
     if (customization.selectedField === "save") saveCustomize();
     else if (customization.selectedField === "cancel") cancelCustomize();
+    else if (customization.selectedField === "powerUps") openPowerUpsMenu();
+    else if (customization.selectedField === "powerBack") closePowerUpsMenu();
     else selectRelativeField(1);
     return true;
   }
@@ -144,7 +167,7 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
-  if (customization.selectedField === "playerType" || customization.selectedField === "weaponType" || customization.selectedField === "worldGeneration" || customization.selectedField === "targetFps" || customization.selectedField === "opponentIntelligence" || customization.selectedField === "spawningLocations") {
+  if (isOptionField(customization.selectedField)) {
     if (lower === "arrowleft") {
       selectRelativeOption(customization.selectedField, -1);
       return true;
@@ -176,6 +199,14 @@ export function selectCustomizeField(field) {
 }
 
 export function cycleCustomizeOption(field, offset = 1) {
+  if (field === "powerUps") {
+    openPowerUpsMenu();
+    return;
+  }
+  if (field === "powerBack") {
+    closePowerUpsMenu();
+    return;
+  }
   if (isNumberField(field)) {
     stepNumberField(field, offset);
     return;
@@ -184,19 +215,25 @@ export function cycleCustomizeOption(field, offset = 1) {
 }
 
 function selectRelativeField(offset) {
-  const index = customizeFields.indexOf(customization.selectedField);
-  const next = (index + offset + customizeFields.length) % customizeFields.length;
-  customization.selectedField = customizeFields[next];
+  const fields = currentFields();
+  const index = fields.indexOf(customization.selectedField);
+  const next = (index + offset + fields.length) % fields.length;
+  customization.selectedField = fields[next];
 }
 
 function isNumberField(field) {
-  return field === "startingPowerUps" || field === "level";
+  return field === "level"
+    || field === "startingBootsLevel"
+    || field === "startingSpecs"
+    || field === "startingRadar"
+    || field === "startingShieldLevel"
+    || field === "startingDroneLevel";
 }
 
 function numberBounds(field) {
-  return field === "level"
-    ? { min: 1, max: 99 }
-    : { min: 0, max: 20 };
+  if (field === "level") return { min: 1, max: 99 };
+  if (field === "startingBootsLevel" || field === "startingShieldLevel" || field === "startingDroneLevel") return { min: 0, max: 5 };
+  return { min: 0, max: 1 };
 }
 
 function stepNumberField(field, offset) {
@@ -210,6 +247,15 @@ function selectRelativeOption(field, offset) {
   const index = options.indexOf(current);
   const next = (index + offset + options.length) % options.length;
   customization[field] = options[next];
+}
+
+function isOptionField(field) {
+  return field === "playerType"
+    || field === "weaponType"
+    || field === "worldGeneration"
+    || field === "targetFps"
+    || field === "opponentIntelligence"
+    || field === "spawningLocations";
 }
 
 function optionSetForField(field) {
@@ -229,6 +275,24 @@ function getSelectedText() {
 
 function isTextField() {
   return customization.selectedField === "name" || customization.selectedField === "tagline";
+}
+
+function currentFields() {
+  return customization.customizeMenu === "powerUps" ? powerCustomizeFields : mainCustomizeFields;
+}
+
+function currentRows() {
+  return customization.customizeMenu === "powerUps" ? powerCustomizeRows : mainCustomizeRows;
+}
+
+function openPowerUpsMenu() {
+  customization.customizeMenu = "powerUps";
+  customization.selectedField = "startingBootsLevel";
+}
+
+function closePowerUpsMenu() {
+  customization.customizeMenu = "main";
+  customization.selectedField = "powerUps";
 }
 
 function selectedTextIsDefault() {

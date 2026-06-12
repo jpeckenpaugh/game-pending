@@ -133,7 +133,14 @@ function addExpansionPlatforms(centerX, sideOffset, upperY, caveY, upperWidth, c
 
 function layoutRandom() {
   if (customization.worldGeneration === "random") return Math.random;
-  let seed = hashString(`${customization.name}|${customization.tagline}|${game.level}|${customization.startingPowerUps}`);
+  const loadout = [
+    customization.startingBootsLevel,
+    customization.startingSpecs,
+    customization.startingRadar,
+    customization.startingShieldLevel,
+    customization.startingDroneLevel,
+  ].join("|");
+  let seed = hashString(`${customization.name}|${customization.tagline}|${game.level}|${loadout}`);
   return () => {
     seed = (seed * 1664525 + 1013904223) >>> 0;
     return seed / 4294967296;

@@ -242,6 +242,20 @@
 - [x] Change default keyboard jump from `Z` to Command/Meta.
 - [x] Run syntax checks after Command jump key change.
 - [x] Run headless input check for Command jump and `W` upward club aim.
+- [x] Replace randomized starting power-up count with per-power Customize loadout settings.
+- [x] Add starting Boots, Specs, Radar, Shield level, and Drone level Customize rows.
+- [x] Apply selected starting loadout when a new game begins.
+- [x] Run syntax checks after per-power starting loadout update.
+- [x] Run headless Customize/loadout checks for per-power starting grants.
+- [x] Smoke test Customize screen after per-power starting loadout update.
+- [x] Make Boots stack to level 5.
+- [x] Grant one refreshed mid-air jump per Boots level.
+- [x] Pulse Boots artwork when a mid-air jump is consumed.
+- [x] Cap Shield and Drone levels at 5.
+- [x] Move per-power loadout controls under a Power Ups Customize submenu.
+- [x] Run syntax checks after Boots levels and Power Ups submenu update.
+- [x] Run headless checks for Boots mid-air jumps, caps, and submenu navigation.
+- [x] Smoke test Power Ups Customize submenu after Boots level update.
 - [x] Extend manual weapon aiming directions to gun and wand.
 - [x] Preserve grounded crouch/down as forward fire for gun and wand.
 - [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.

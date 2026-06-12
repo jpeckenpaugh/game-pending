@@ -352,29 +352,49 @@ function drawPauseScreen() {
 
 function drawCustomizeScreen() {
   drawCenteredText([
-    { text: "CUSTOMIZE", font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
-    { text: "Blank canvas settings", font: "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 28 },
+    { text: customization.customizeMenu === "powerUps" ? "POWER UPS" : "CUSTOMIZE", font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
+    { text: customization.customizeMenu === "powerUps" ? "Starting loadout" : "Blank canvas settings", font: "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 28 },
   ], Math.max(90, window.innerHeight * 0.18));
 
-  const startY = Math.max(170, window.innerHeight * 0.28);
-  drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
-  drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + 42);
-  drawCustomizeRow("startingPowerUps", "Current Power Ups", String(customization.startingPowerUps), startY + 84);
-  drawCustomizeRow("level", "Level", String(customization.level), startY + 126);
-  drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + 168);
-  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + 210);
-  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + 252);
-  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + 294);
-  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + 336);
-  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + 378);
+  const startY = Math.max(132, window.innerHeight * 0.19);
+  const rowHeight = 34;
+  if (customization.customizeMenu === "powerUps") {
+    drawCustomizeRow("startingBootsLevel", "Boots", levelLabel(customization.startingBootsLevel), startY);
+    drawCustomizeRow("startingSpecs", "Specs", yesNoLabel(customization.startingSpecs), startY + rowHeight);
+    drawCustomizeRow("startingRadar", "Radar", yesNoLabel(customization.startingRadar), startY + rowHeight * 2);
+    drawCustomizeRow("startingShieldLevel", "Shield", levelLabel(customization.startingShieldLevel), startY + rowHeight * 3);
+    drawCustomizeRow("startingDroneLevel", "Drone", levelLabel(customization.startingDroneLevel), startY + rowHeight * 4);
+    drawCustomizeRow("powerBack", "Back", "Main Menu", startY + rowHeight * 5);
+    drawHintLines(
+      window.innerWidth < 620
+        ? [customizeTooltip(customization.selectedField), "Left/Right changes values.", "Esc goes back."]
+        : [customizeTooltip(customization.selectedField), "Use arrows to select. Left/Right changes values. Enter on Back returns. Esc goes back."],
+      startY + rowHeight * 6 + 36,
+      "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      20
+    );
+    return;
+  }
 
-  drawSplitButtons("SAVE", "CANCEL", Math.max(618, startY + 432));
+  drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
+  drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + rowHeight);
+  drawCustomizeRow("powerUps", "Power Ups", powerUpLoadoutLabel(), startY + rowHeight * 2);
+  drawCustomizeRow("level", "Level", String(customization.level), startY + rowHeight * 3);
+  drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + rowHeight * 4);
+  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + rowHeight * 5);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + rowHeight * 6);
+  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + rowHeight * 7);
+  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + rowHeight * 8);
+  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + rowHeight * 9);
+
+  const buttonY = Math.max(startY + rowHeight * 10 + 24, window.innerHeight - 112);
+  drawSplitButtons("SAVE", "CANCEL", buttonY);
 
   drawHintLines(
     window.innerWidth < 620
       ? [customizeTooltip(customization.selectedField), "Left/Right changes values.", "Enter saves. Esc cancels."]
       : [customizeTooltip(customization.selectedField), "Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels."],
-    Math.max(694, startY + 496),
+    buttonY + 76,
     "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
     20
   );
@@ -398,6 +418,25 @@ function targetFpsLabel(targetFps) {
   return targetFps === "auto" ? "Auto" : String(targetFps);
 }
 
+function yesNoLabel(value) {
+  return value ? "On" : "Off";
+}
+
+function levelLabel(value) {
+  return value > 0 ? `Lv ${value}` : "Off";
+}
+
+function powerUpLoadoutLabel() {
+  const count = [
+    customization.startingBootsLevel,
+    customization.startingSpecs,
+    customization.startingRadar,
+    customization.startingShieldLevel,
+    customization.startingDroneLevel,
+  ].filter(Boolean).length;
+  return count > 0 ? `${count} set` : "None";
+}
+
 function opponentIntelligenceLabel(opponentIntelligence) {
   if (opponentIntelligence === "random") return "Random";
   if (opponentIntelligence === "bold") return "Bold";
@@ -413,7 +452,12 @@ function spawningLocationsLabel(spawningLocations) {
 function customizeTooltip(field) {
   if (field === "name") return "Sets the title shown on menu screens.";
   if (field === "tagline") return "Sets the subtitle shown under the title.";
-  if (field === "startingPowerUps") return "Adds power-ups at the start of a new game.";
+  if (field === "powerUps") return "Opens starting power-up loadout settings.";
+  if (field === "startingBootsLevel") return "Sets Boots level; each level grants one refreshed mid-air jump.";
+  if (field === "startingSpecs") return "Starts each new game with Specs auto-aim enabled.";
+  if (field === "startingRadar") return "Starts each new game with Radar direction tracking enabled.";
+  if (field === "startingShieldLevel") return "Sets the starting Shield level and full charges.";
+  if (field === "startingDroneLevel") return "Sets the starting Drone level and full charges.";
   if (field === "level") return "Chooses the starting level and world size.";
   if (field === "targetFps") return "Caps render rate; Auto adapts when the game gets busy.";
   if (field === "playerType") return "Changes the player character art.";
@@ -423,6 +467,7 @@ function customizeTooltip(field) {
   if (field === "worldGeneration") return "Seeded repeats the same layout; Random varies each run.";
   if (field === "save") return "Applies these settings.";
   if (field === "cancel") return "Restores the previous settings.";
+  if (field === "powerBack") return "Returns to the main Customize menu.";
   return "Customize game settings.";
 }
 

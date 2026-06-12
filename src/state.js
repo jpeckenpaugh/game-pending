@@ -36,6 +36,8 @@ export const player = {
   shootCooldown: 0,
   invulnerableFor: 0,
   climbing: false,
+  airJumpsRemaining: 0,
+  bootsPulseTimer: 0,
 };
 
 export const camera = { x: 0, y: 0, zoom: 1 };
@@ -57,7 +59,7 @@ export const drone = {
 };
 
 export const powerUps = {
-  boots: 0,
+  bootsLevel: 0,
   shieldLevel: 0,
   shieldCharges: 0,
   shieldRecharge: 0,
@@ -83,7 +85,11 @@ export const states = {
 export const customization = {
   name: "Game Pending",
   tagline: "Name Pending",
-  startingPowerUps: 0,
+  startingBootsLevel: 0,
+  startingSpecs: 0,
+  startingRadar: 0,
+  startingShieldLevel: 0,
+  startingDroneLevel: 0,
   level: 1,
   targetFps: "auto",
   playerType: "original",
@@ -92,10 +98,15 @@ export const customization = {
   spawningLocations: "standard",
   worldGeneration: "seeded",
   selectedField: "name",
+  customizeMenu: "main",
   returnState: states.TITLE,
   savedName: "Game Pending",
   savedTagline: "Name Pending",
-  savedStartingPowerUps: 0,
+  savedStartingBootsLevel: 0,
+  savedStartingSpecs: 0,
+  savedStartingRadar: 0,
+  savedStartingShieldLevel: 0,
+  savedStartingDroneLevel: 0,
   savedLevel: 1,
   savedTargetFps: "auto",
   savedPlayerType: "original",

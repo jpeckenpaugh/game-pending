@@ -47,12 +47,23 @@ export function jump() {
   player.jumpBuffer = 0;
 }
 
+function midAirJump() {
+  player.vy = -jumpImpulse();
+  player.onGround = false;
+  player.surfaceId = "";
+  player.climbing = false;
+  player.coyoteTimer = 0;
+  player.jumpBuffer = 0;
+  player.airJumpsRemaining = Math.max(0, player.airJumpsRemaining - 1);
+  player.bootsPulseTimer = 0.28;
+}
+
 export function jumpImpulse() {
-  return player.jumpPower * (powerUps.boots ? Math.SQRT2 : 1);
+  return player.jumpPower * (powerUps.bootsLevel ? Math.SQRT2 : 1);
 }
 
 export function canStomp(enemy) {
-  if (!powerUps.boots || player.vy <= 160) return false;
+  if (!powerUps.bootsLevel || player.vy <= 160) return false;
   const enemyTop = enemy.y - enemy.radius;
   const previousFeet = player.previousY;
   const currentFeet = player.y;
@@ -76,6 +87,7 @@ export function applyPlayerMovement(dt, groundAt) {
   const climbAxis = verticalAxis();
   const ladderEntry = climbAxis > 0 && wasOnGround ? ladderEntryAt(player.x, player.y) : null;
   const activeLadder = ladder || ladderEntry;
+  player.bootsPulseTimer = Math.max(0, player.bootsPulseTimer - dt);
   if (activeLadder && climbAxis !== 0) {
     player.climbing = true;
     player.onGround = false;
@@ -117,8 +129,12 @@ export function applyPlayerMovement(dt, groundAt) {
     player.coyoteTimer = Math.max(0, player.coyoteTimer - dt);
   }
 
-  if (!ducking && player.jumpBuffer > 0 && (player.onGround || player.coyoteTimer > 0)) {
-    jump();
+  if (!ducking && player.jumpBuffer > 0) {
+    if (player.onGround || player.coyoteTimer > 0) {
+      jump();
+    } else if (!player.climbing && player.airJumpsRemaining > 0) {
+      midAirJump();
+    }
   }
 
   player.previousY = player.y;
@@ -144,6 +160,7 @@ export function applyPlayerMovement(dt, groundAt) {
     player.onGround = true;
     player.surfaceId = landing.surfaceId;
     player.climbing = false;
+    player.airJumpsRemaining = powerUps.bootsLevel;
   } else {
     player.onGround = false;
     player.surfaceId = "";

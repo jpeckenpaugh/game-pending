@@ -147,20 +147,36 @@ function drawOriginalPlayer() {
 }
 
 function drawBoots(x, y, ducking) {
-  if (!powerUps.boots) return;
+  if (!powerUps.bootsLevel) return;
+  const previousAlpha = ctx.globalAlpha;
+  const previousLineWidth = ctx.lineWidth;
+  if (player.bootsPulseTimer > 0) {
+    const pulse = player.bootsPulseTimer / 0.28;
+    ctx.globalAlpha *= 0.45 + pulse * 0.55;
+    ctx.lineWidth = strokeWidth(2 + pulse * 3);
+  }
   if (ducking) {
     drawBoot(x - z(28), y - z(8), -1);
     drawBoot(x + z(12), y - z(8), 1);
+    ctx.globalAlpha = previousAlpha;
+    ctx.lineWidth = previousLineWidth;
     return;
   }
   drawBoot(x - z(22), y - z(8), -1);
   drawBoot(x + z(10), y - z(8), 1);
+  ctx.globalAlpha = previousAlpha;
+  ctx.lineWidth = previousLineWidth;
 }
 
 function drawBoot(x, y, side) {
   ctx.fillRect(x, y, z(14), z(8));
   const heelX = side < 0 ? x + z(10) : x;
   ctx.fillRect(heelX, y - z(5), z(5), z(5));
+  if (player.bootsPulseTimer > 0) {
+    const pulse = player.bootsPulseTimer / 0.28;
+    const spread = z(2 + (1 - pulse) * 6);
+    ctx.strokeRect(x - spread, y - spread, z(14) + spread * 2, z(8) + spread * 2);
+  }
 }
 
 function drawSpecs(x, y) {
