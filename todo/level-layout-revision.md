@@ -27,7 +27,7 @@
 - [x] Allow enemies and drops to be placed on platforms.
 - [x] Render platforms with simple black-and-white canvas line art.
 - [x] Make platform collision one-way from above so the player can jump up through platforms and land on top.
-- [ ] Verify jumping, ducking, shooting, and stomp behavior still work on platform surfaces.
+- [x] Verify jumping, ducking, shooting, and stomp behavior still work on platform surfaces.
 
 ## Phase 4 - Ladders
 

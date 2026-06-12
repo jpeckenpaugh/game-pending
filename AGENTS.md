@@ -17,10 +17,10 @@ Keep new behavior in the closest existing module:
 - Rendering and menus: `src/render.js`
 - Selectable player art: `src/playerCharacters.js`
 - Selectable weapon art: `src/weapons.js`
-- Movement and stomp rules: `src/player.js`
+- Movement, jump charges, and stomp rules: `src/player.js`
 - Enemy spawning/AI: `src/enemies.js`
-- Projectiles and shot collisions: `src/projectiles.js`
-- Power-up state and recharge: `src/powerups.js`
+- Projectiles, directional aiming, and shot collisions: `src/projectiles.js`
+- Power-up grants, starting loadouts, state, and recharge: `src/powerups.js`
 - Drone-specific behavior: `src/drone.js`
 - Customize menu logic: `src/customize.js`
 - Input routing: `src/input.js`
