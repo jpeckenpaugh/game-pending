@@ -232,7 +232,7 @@ function isNumberField(field) {
 
 function numberBounds(field) {
   if (field === "level") return { min: 1, max: 99 };
-  if (field === "startingBootsLevel" || field === "startingShieldLevel" || field === "startingDroneLevel") return { min: 0, max: 5 };
+  if (field === "startingBootsLevel" || field === "startingShieldLevel" || field === "startingDroneLevel") return { min: 0, max: 10 };
   return { min: 0, max: 1 };
 }
 

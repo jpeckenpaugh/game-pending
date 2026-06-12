@@ -56,6 +56,8 @@ export const drone = {
   y: 0,
   targetX: 0,
   targetY: 0,
+  extraShotsRemaining: 0,
+  extraShotTimer: 0,
 };
 
 export const powerUps = {
@@ -63,11 +65,17 @@ export const powerUps = {
   shieldLevel: 0,
   shieldCharges: 0,
   shieldRecharge: 0,
+  shieldKineticCharges: 0,
+  shieldKineticRecharge: 0,
   specs: 0,
   radar: 0,
   droneLevel: 0,
   droneCharges: 0,
   droneRecharge: 0,
+  droneExtraMissiles: 0,
+  droneExtraRecharge: 0,
+  bootsGlideCharge: 0,
+  bootsGlideCooldown: 0,
 };
 
 export const powerUpPool = ["boots", "shield", "specs", "radar", "drone"];
@@ -120,7 +128,7 @@ export const customization = {
 export const game = {
   level: 1,
   enemiesRemaining: 0,
-  message: "Arrows/WASD move, Command jumps, Space shoots",
+  message: "Arrows/WASD move, X jumps, Space shoots",
   messageTimer: 4,
   state: states.TITLE,
   completedLevel: 0,

@@ -1,29 +1,64 @@
 import { customization, drone, game, powerUpPool, powerUps, projectiles, player } from "./state.js";
+import { groundAt, surfaceById, surfaceYAt } from "./terrain.js";
+
+export function primaryPowerLevel(level) {
+  return Math.max(0, Math.min(5, level));
+}
+
+export function tierTwoLevel(level) {
+  return Math.max(0, Math.min(5, level - 5));
+}
+
+export function bootsGlideMax() {
+  return tierTwoLevel(powerUps.bootsLevel) * 2;
+}
+
+export function droneExtraMissileMax() {
+  return tierTwoLevel(powerUps.droneLevel);
+}
+
+export function shieldKineticMax() {
+  return tierTwoLevel(powerUps.shieldLevel);
+}
 
 export function resetPowerUps() {
   powerUps.bootsLevel = 0;
+  powerUps.bootsGlideCharge = 0;
+  powerUps.bootsGlideCooldown = 0;
   powerUps.shieldLevel = 0;
   powerUps.shieldCharges = 0;
   powerUps.shieldRecharge = 0;
+  powerUps.shieldKineticCharges = 0;
+  powerUps.shieldKineticRecharge = 0;
   powerUps.specs = 0;
   powerUps.radar = 0;
   powerUps.droneLevel = 0;
   powerUps.droneCharges = 0;
   powerUps.droneRecharge = 0;
+  powerUps.droneExtraMissiles = 0;
+  powerUps.droneExtraRecharge = 0;
   drone.active = false;
+  drone.extraShotsRemaining = 0;
+  drone.extraShotTimer = 0;
   game.lastPowerUp = "";
 }
 
 export function applyStartingPowerUps() {
-  powerUps.bootsLevel = Math.max(0, Math.min(5, customization.startingBootsLevel));
+  powerUps.bootsLevel = Math.max(0, Math.min(10, customization.startingBootsLevel));
+  powerUps.bootsGlideCharge = bootsGlideMax();
+  powerUps.bootsGlideCooldown = 0;
   powerUps.specs = customization.startingSpecs ? 1 : 0;
   powerUps.radar = customization.startingRadar ? 1 : 0;
-  powerUps.shieldLevel = Math.max(0, Math.min(5, customization.startingShieldLevel));
-  powerUps.shieldCharges = powerUps.shieldLevel;
+  powerUps.shieldLevel = Math.max(0, Math.min(10, customization.startingShieldLevel));
+  powerUps.shieldCharges = primaryPowerLevel(powerUps.shieldLevel);
   powerUps.shieldRecharge = 0;
-  powerUps.droneLevel = Math.max(0, Math.min(5, customization.startingDroneLevel));
-  powerUps.droneCharges = powerUps.droneLevel;
+  powerUps.shieldKineticCharges = shieldKineticMax();
+  powerUps.shieldKineticRecharge = 0;
+  powerUps.droneLevel = Math.max(0, Math.min(10, customization.startingDroneLevel));
+  powerUps.droneCharges = primaryPowerLevel(powerUps.droneLevel);
   powerUps.droneRecharge = 0;
+  powerUps.droneExtraMissiles = droneExtraMissileMax();
+  powerUps.droneExtraRecharge = 0;
 }
 
 export function grantRandomPowerUp() {
@@ -33,24 +68,27 @@ export function grantRandomPowerUp() {
 
 export function grantPowerUp(type) {
   if (type === "boots") {
-    powerUps.bootsLevel = Math.min(5, powerUps.bootsLevel + 1);
-    player.airJumpsRemaining = Math.max(player.airJumpsRemaining, powerUps.bootsLevel);
+    powerUps.bootsLevel = Math.min(10, powerUps.bootsLevel + 1);
+    player.airJumpsRemaining = Math.max(player.airJumpsRemaining, primaryPowerLevel(powerUps.bootsLevel));
+    powerUps.bootsGlideCharge = Math.max(powerUps.bootsGlideCharge, bootsGlideMax());
     game.lastPowerUp = `Boots Lv ${powerUps.bootsLevel}`;
     return game.lastPowerUp;
   }
 
   if (type === "shield") {
-    powerUps.shieldLevel = Math.min(5, powerUps.shieldLevel + 1);
-    powerUps.shieldCharges = Math.min(powerUps.shieldLevel, powerUps.shieldCharges + 1);
-    powerUps.shieldRecharge = powerUps.shieldCharges < powerUps.shieldLevel ? powerUps.shieldRecharge : 0;
+    powerUps.shieldLevel = Math.min(10, powerUps.shieldLevel + 1);
+    powerUps.shieldCharges = Math.min(primaryPowerLevel(powerUps.shieldLevel), powerUps.shieldCharges + 1);
+    powerUps.shieldRecharge = powerUps.shieldCharges < primaryPowerLevel(powerUps.shieldLevel) ? powerUps.shieldRecharge : 0;
+    powerUps.shieldKineticCharges = Math.min(shieldKineticMax(), powerUps.shieldKineticCharges + 1);
     game.lastPowerUp = `Shield Lv ${powerUps.shieldLevel}`;
     return game.lastPowerUp;
   }
 
   if (type === "drone") {
-    powerUps.droneLevel = Math.min(5, powerUps.droneLevel + 1);
-    powerUps.droneCharges = Math.min(powerUps.droneLevel, powerUps.droneCharges + 1);
-    powerUps.droneRecharge = powerUps.droneCharges < powerUps.droneLevel ? powerUps.droneRecharge : 0;
+    powerUps.droneLevel = Math.min(10, powerUps.droneLevel + 1);
+    powerUps.droneCharges = Math.min(primaryPowerLevel(powerUps.droneLevel), powerUps.droneCharges + 1);
+    powerUps.droneRecharge = powerUps.droneCharges < primaryPowerLevel(powerUps.droneLevel) ? powerUps.droneRecharge : 0;
+    powerUps.droneExtraMissiles = Math.min(droneExtraMissileMax(), powerUps.droneExtraMissiles + 1);
     game.lastPowerUp = `Drone Lv ${powerUps.droneLevel}`;
     return game.lastPowerUp;
   }
@@ -81,18 +119,18 @@ export function powerUpChoiceOptions(count = 3) {
 }
 
 function powerUpCanImprove(type) {
-  if (type === "boots") return powerUps.bootsLevel < 5;
-  if (type === "shield") return powerUps.shieldLevel < 5;
-  if (type === "drone") return powerUps.droneLevel < 5;
+  if (type === "boots") return powerUps.bootsLevel < 10;
+  if (type === "shield") return powerUps.shieldLevel < 10;
+  if (type === "drone") return powerUps.droneLevel < 10;
   if (type === "specs") return !powerUps.specs;
   if (type === "radar") return !powerUps.radar;
   return true;
 }
 
 function powerUpInfo(type) {
-  if (type === "boots") return { type, name: "Boots", description: "Adds a mid-air jump." };
-  if (type === "shield") return { type, name: "Shield", description: "Blocks one hit per charge." };
-  if (type === "drone") return { type, name: "Drone", description: "Calls in air support." };
+  if (type === "boots") return { type, name: "Boots", description: powerUps.bootsLevel >= 5 ? "Adds rocket glide charge." : "Adds a mid-air jump." };
+  if (type === "shield") return { type, name: "Shield", description: powerUps.shieldLevel >= 5 ? "Adds kinetic stun charge." : "Blocks one hit per charge." };
+  if (type === "drone") return { type, name: "Drone", description: powerUps.droneLevel >= 5 ? "Adds extra drone missiles." : "Calls in air support." };
   if (type === "radar") return { type, name: "Radar", description: "Points to the nearest enemy." };
   return { type: "specs", name: "Specs", description: "Auto-aims ranged attacks." };
 }
@@ -114,40 +152,87 @@ export function grantPowerUpWithFeedback() {
 
 export function rechargePowerUpsOnLevelComplete() {
   if (powerUps.shieldLevel > 0) {
-    powerUps.shieldCharges = powerUps.shieldLevel;
+    powerUps.shieldCharges = primaryPowerLevel(powerUps.shieldLevel);
     powerUps.shieldRecharge = 0;
+    powerUps.shieldKineticCharges = shieldKineticMax();
+    powerUps.shieldKineticRecharge = 0;
   }
 
   if (powerUps.droneLevel > 0) {
-    powerUps.droneCharges = powerUps.droneLevel;
+    powerUps.droneCharges = primaryPowerLevel(powerUps.droneLevel);
     powerUps.droneRecharge = 0;
+    powerUps.droneExtraMissiles = droneExtraMissileMax();
+    powerUps.droneExtraRecharge = 0;
+  }
+
+  if (powerUps.bootsLevel > 0) {
+    powerUps.bootsGlideCharge = bootsGlideMax();
+    powerUps.bootsGlideCooldown = 0;
   }
 }
 
 export function updateShieldRecharge(dt) {
-  if (powerUps.shieldLevel === 0 || powerUps.shieldCharges >= powerUps.shieldLevel) {
+  const primaryMax = primaryPowerLevel(powerUps.shieldLevel);
+  if (primaryMax === 0 || powerUps.shieldCharges >= primaryMax) {
     powerUps.shieldRecharge = 0;
+  } else {
+    powerUps.shieldRecharge += dt;
+    if (powerUps.shieldRecharge >= 10) {
+      powerUps.shieldCharges += 1;
+      powerUps.shieldRecharge = 0;
+      game.message = "Shield recharged";
+      game.messageTimer = 1.4;
+    }
+  }
+
+  const kineticMax = shieldKineticMax();
+  if (kineticMax === 0 || powerUps.shieldKineticCharges >= kineticMax) {
+    powerUps.shieldKineticRecharge = 0;
     return;
   }
 
-  powerUps.shieldRecharge += dt;
-  if (powerUps.shieldRecharge >= 10) {
-    powerUps.shieldCharges += 1;
-    powerUps.shieldRecharge = powerUps.shieldCharges < powerUps.shieldLevel ? 0 : 0;
-    game.message = "Shield recharged";
+  powerUps.shieldKineticRecharge += dt;
+  if (powerUps.shieldKineticRecharge >= 20) {
+    powerUps.shieldKineticCharges += 1;
+    powerUps.shieldKineticRecharge = 0;
+    game.message = "Kinetic shield charged";
     game.messageTimer = 1.4;
   }
 }
 
-export function absorbOrTakeHit(onGameOver) {
+export function updateBootsGlideRecharge(dt) {
+  const max = bootsGlideMax();
+  if (max === 0) {
+    powerUps.bootsGlideCharge = 0;
+    powerUps.bootsGlideCooldown = 0;
+    return;
+  }
+
+  if (powerUps.bootsGlideCooldown > 0) {
+    powerUps.bootsGlideCooldown = Math.max(0, powerUps.bootsGlideCooldown - dt);
+    return;
+  }
+
+  powerUps.bootsGlideCharge = Math.min(max, powerUps.bootsGlideCharge + dt);
+}
+
+export function absorbOrTakeHit(onGameOver, enemy = null) {
   if (powerUps.shieldCharges > 0) {
     powerUps.shieldCharges -= 1;
     powerUps.shieldRecharge = 0;
     player.invulnerableFor = 1.3;
+    if (enemy && powerUps.shieldKineticCharges > 0) {
+      powerUps.shieldKineticCharges -= 1;
+      powerUps.shieldKineticRecharge = 0;
+      suspendEnemy(enemy);
+      game.message = "Kinetic discharge";
+      game.messageTimer = 1.6;
+      return "kinetic";
+    }
     player.vx = -player.facing * 260;
     game.message = "Shield blocked hit";
     game.messageTimer = 1.6;
-    return;
+    return "shield";
   }
 
   player.ammo = Math.max(0, player.ammo - 2);
@@ -158,6 +243,19 @@ export function absorbOrTakeHit(onGameOver) {
   if (player.ammo === 0 && projectiles.length === 0) {
     onGameOver();
   }
+  return "hit";
+}
+
+function suspendEnemy(enemy) {
+  const surface = enemy.surfaceId ? surfaceById(enemy.surfaceId) : null;
+  const endY = (surface ? surfaceYAt(surface, enemy.x) : groundAt(enemy.x)) - enemy.radius;
+  enemy.suspendedFor = 5;
+  enemy.suspendedDuration = 5;
+  enemy.suspendedStartY = enemy.y;
+  enemy.suspendedBaseY = Math.min(enemy.y, endY) - 62;
+  enemy.suspendedEndY = endY;
+  enemy.suspendedSpin = 0;
+  enemy.flashTimer = 5;
 }
 
 export function powerUpSummary() {
@@ -165,7 +263,7 @@ export function powerUpSummary() {
   if (powerUps.bootsLevel) active.push(`Boots ${powerUps.bootsLevel}`);
   if (powerUps.specs) active.push("Specs");
   if (powerUps.radar) active.push("Radar");
-  if (powerUps.droneLevel) active.push(`Drone ${powerUps.droneCharges}/${powerUps.droneLevel}`);
-  if (powerUps.shieldLevel) active.push(`Shield ${powerUps.shieldCharges}/${powerUps.shieldLevel}`);
+  if (powerUps.droneLevel) active.push(`Drone ${powerUps.droneCharges}/${primaryPowerLevel(powerUps.droneLevel)}`);
+  if (powerUps.shieldLevel) active.push(`Shield ${powerUps.shieldCharges}/${primaryPowerLevel(powerUps.shieldLevel)}`);
   return active.length > 0 ? active.join("  ") : "none";
 }

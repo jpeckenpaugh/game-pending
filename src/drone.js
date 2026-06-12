@@ -1,5 +1,6 @@
 import { camera, drone, game, powerUps, projectiles } from "./state.js";
 import { nearestEnemy, visibleEnemy } from "./targeting.js";
+import { droneExtraMissileMax, primaryPowerLevel } from "./powerups.js";
 
 export function updateDrone(dt) {
   if (powerUps.droneLevel === 0) return;
@@ -8,6 +9,7 @@ export function updateDrone(dt) {
   startDroneRun();
 
   if (!drone.active) return;
+  updateExtraDroneShots(dt);
 
   const dx = drone.targetX - drone.x;
   const dy = drone.targetY - drone.y;
@@ -48,24 +50,63 @@ function startDroneRun() {
   drone.y = camera.y + window.innerHeight * 0.25;
   drone.targetX = camera.x + window.innerWidth * 0.5;
   drone.targetY = camera.y + window.innerHeight * 0.25;
+  drone.extraShotsRemaining = 0;
+  drone.extraShotTimer = 0;
 }
 
 function updateDroneRecharge(dt) {
-  if (powerUps.droneLevel === 0 || powerUps.droneCharges >= powerUps.droneLevel) {
+  const primaryMax = primaryPowerLevel(powerUps.droneLevel);
+  if (primaryMax === 0 || powerUps.droneCharges >= primaryMax) {
     powerUps.droneRecharge = 0;
+  } else {
+    powerUps.droneRecharge += dt;
+    if (powerUps.droneRecharge >= 10) {
+      powerUps.droneCharges += 1;
+      powerUps.droneRecharge = 0;
+      game.message = "Drone charged";
+      game.messageTimer = 1.4;
+    }
+  }
+
+  const extraMax = droneExtraMissileMax();
+  if (extraMax === 0 || powerUps.droneExtraMissiles >= extraMax) {
+    powerUps.droneExtraRecharge = 0;
     return;
   }
 
-  powerUps.droneRecharge += dt;
-  if (powerUps.droneRecharge >= 10) {
-    powerUps.droneCharges += 1;
-    powerUps.droneRecharge = powerUps.droneCharges < powerUps.droneLevel ? 0 : 0;
-    game.message = "Drone charged";
+  powerUps.droneExtraRecharge += dt;
+  if (powerUps.droneExtraRecharge >= 5) {
+    powerUps.droneExtraMissiles += 1;
+    powerUps.droneExtraRecharge = 0;
+    game.message = "Extra missile charged";
     game.messageTimer = 1.4;
   }
 }
 
 function fireDroneShot() {
+  fireDroneMissile();
+  const extraCount = Math.min(powerUps.droneExtraMissiles, 1 + Math.floor(Math.random() * 3));
+  if (extraCount > 0) {
+    powerUps.droneExtraMissiles -= extraCount;
+    powerUps.droneExtraRecharge = 0;
+    drone.extraShotsRemaining = extraCount;
+    drone.extraShotTimer = 0.14;
+  }
+  game.message = extraCount > 0 ? "Drone salvo" : "Drone strike";
+  game.messageTimer = 1.1;
+}
+
+function updateExtraDroneShots(dt) {
+  if (drone.extraShotsRemaining <= 0) return;
+  drone.extraShotTimer -= dt;
+  while (drone.extraShotsRemaining > 0 && drone.extraShotTimer <= 0) {
+    fireDroneMissile();
+    drone.extraShotsRemaining -= 1;
+    drone.extraShotTimer += 0.14;
+  }
+}
+
+function fireDroneMissile() {
   const target = nearestEnemy(drone.x, drone.y);
   if (!target) return;
 
@@ -79,6 +120,4 @@ function fireDroneShot() {
     homing: true,
     target,
   });
-  game.message = "Drone strike";
-  game.messageTimer = 1.1;
 }

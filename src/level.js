@@ -1,7 +1,7 @@
 import { customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
-import { applyStartingPowerUps, grantPowerUp, powerUpChoiceOptions, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
+import { applyStartingPowerUps, grantPowerUp, powerUpChoiceOptions, primaryPowerLevel, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
 
 export function startLevel(nextLevel) {
   game.level = nextLevel;
@@ -12,6 +12,8 @@ export function startLevel(nextLevel) {
   particles.length = 0;
   drone.active = false;
   drone.phase = "idle";
+  drone.extraShotsRemaining = 0;
+  drone.extraShotTimer = 0;
   game.wrapTimer = 0;
   game.teleportPhase = "idle";
   game.teleportTimer = 0;
@@ -37,7 +39,7 @@ export function startLevel(nextLevel) {
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
   player.invulnerableFor = 1.2;
-  player.airJumpsRemaining = powerUps.bootsLevel;
+  player.airJumpsRemaining = primaryPowerLevel(powerUps.bootsLevel);
   player.bootsPulseTimer = 0;
   player.ammo = Math.max(player.ammo, 10);
   centerCameraOnPlayer();

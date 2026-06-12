@@ -1,5 +1,6 @@
 import { game, keys, player, powerUps, states, touches, world } from "./state.js";
 import { groundAt, ladderAt, ladderEntryAt, ladderExitSurfaceAt, landingSurfaceAt, oppositeTeleport, teleportAt } from "./terrain.js";
+import { bootsGlideMax, primaryPowerLevel } from "./powerups.js";
 
 export function inputAxis() {
   let axis = 0;
@@ -113,9 +114,6 @@ export function applyPlayerMovement(dt, groundAt) {
     player.vx *= Math.pow(world.friction, dt * 60);
   }
 
-  const maxSpeed = ducking ? 145 : 360;
-  player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
-
   if (game.jumpRequested) {
     player.jumpBuffer = 0.12;
     game.jumpRequested = false;
@@ -137,6 +135,10 @@ export function applyPlayerMovement(dt, groundAt) {
     }
   }
 
+  const gliding = canRocketGlide();
+  const maxSpeed = gliding ? 430 : ducking ? 145 : 360;
+  player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
+
   player.previousY = player.y;
   if (player.climbing) {
     player.vy = climbAxis * 190;
@@ -144,6 +146,10 @@ export function applyPlayerMovement(dt, groundAt) {
     if (!ladder || (climbAxis === 0 && !keys.has("arrowup") && !keys.has("w") && !keys.has("arrowdown") && !keys.has("s"))) {
       player.vy = 0;
     }
+  } else if (gliding) {
+    powerUps.bootsGlideCharge = Math.max(0, powerUps.bootsGlideCharge - dt);
+    powerUps.bootsGlideCooldown = 5;
+    player.vy = Math.min(Math.max(player.vy, -80), 38);
   } else {
     player.vy += world.gravity * dt;
   }
@@ -160,7 +166,7 @@ export function applyPlayerMovement(dt, groundAt) {
     player.onGround = true;
     player.surfaceId = landing.surfaceId;
     player.climbing = false;
-    player.airJumpsRemaining = powerUps.bootsLevel;
+    player.airJumpsRemaining = primaryPowerLevel(powerUps.bootsLevel);
   } else {
     player.onGround = false;
     player.surfaceId = "";
@@ -168,6 +174,21 @@ export function applyPlayerMovement(dt, groundAt) {
       player.climbing = false;
     }
   }
+}
+
+function canRocketGlide() {
+  if (bootsGlideMax() <= 0 || powerUps.bootsGlideCharge <= 0) return false;
+  if (player.onGround || player.climbing) return false;
+  if (player.vy < 0) return false;
+  return jumpHeld();
+}
+
+function jumpHeld() {
+  if (keys.has("x")) return true;
+  for (const zone of touches.values()) {
+    if (zone === "jump") return true;
+  }
+  return false;
 }
 
 function wrapPlayerIfNeeded() {

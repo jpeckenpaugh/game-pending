@@ -281,6 +281,29 @@
 - [x] Smooth teleport pan and zoom-in camera handoffs.
 - [x] Run syntax checks after teleport camera smoothing.
 - [x] Capture visual teleport sequence after camera smoothing.
+- [x] Raise Boots, Shield, and Drone power-up caps to level 10.
+- [x] Add Boots tier-two rocket glide charge for levels 6-10.
+- [x] Add Drone tier-two extra missile charge and rapid homing salvos for levels 6-10.
+- [x] Add Shield tier-two kinetic discharge charge for levels 6-10.
+- [x] Suspend, flash, and spin enemies hit by kinetic shield discharges.
+- [x] Add secondary charge bars to the Power Up HUD.
+- [x] Run syntax checks after tier-two power-up implementation.
+- [x] Run browser behavior probe for glide, extra missiles, kinetic suspension, and recharge timing.
+- [x] Capture visual HUD check for tier-two power-up charge bars.
+- [x] Gate Boots glide until the player reaches the apex of the current jump or mid-air jump.
+- [x] Prevent kinetic shield discharge from changing player motion.
+- [x] Animate kinetic shield enemy suspension upward and back down instead of snapping position.
+- [x] Run syntax checks after glide and kinetic shield tuning.
+- [x] Run browser behavior probe for apex-gated glide and smooth kinetic suspension.
+- [x] Replace Boots pulse outline with downward fading thrust ovals.
+- [x] Show Boots thrust ovals for both mid-air jump bursts and rocket glide.
+- [x] Run syntax checks after Boots thrust animation update.
+- [x] Capture visual check for Boots thrust ovals.
+- [x] Change dedicated jump key from Command to X.
+- [x] Slow portal inner oval animation to half speed.
+- [x] Reduce portal concurrent inner ovals.
+- [x] Run syntax checks after X jump and portal speed update.
+- [x] Run browser input probe for X jump replacing Command.
 - [x] Extend manual weapon aiming directions to gun and wand.
 - [x] Preserve grounded crouch/down as forward fire for gun and wand.
 - [x] Keep Specs auto-aim as fallback when gun/wand are not manually aimed.

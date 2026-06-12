@@ -3,7 +3,7 @@ import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
 import { startLevel, showGameOver, showLevelComplete, startLevelClearCollection } from "./level.js";
-import { updateShieldRecharge, absorbOrTakeHit } from "./powerups.js";
+import { updateBootsGlideRecharge, updateShieldRecharge, absorbOrTakeHit } from "./powerups.js";
 import { updateDrone } from "./drone.js";
 import { updateEnemyPositions, defeatEnemy } from "./enemies.js";
 import { updateProjectiles } from "./projectiles.js";
@@ -37,6 +37,7 @@ function update(dt) {
   player.shootCooldown = Math.max(0, player.shootCooldown - dt);
   player.invulnerableFor = Math.max(0, player.invulnerableFor - dt);
   updateShieldRecharge(dt);
+  updateBootsGlideRecharge(dt);
   updateDrone(dt);
 
   applyPlayerMovement(dt, groundAt);
@@ -48,11 +49,23 @@ function update(dt) {
 
     if (canStomp(enemy)) {
       if (enemy.family === "triangle") {
+        const previousMotion = {
+          vx: player.vx,
+          vy: player.vy,
+          onGround: player.onGround,
+        };
         player.vy = -jumpImpulse() * 0.35;
         player.onGround = false;
-        absorbOrTakeHit(showGameOver);
-        game.message = "Pointy!";
-        game.messageTimer = 1;
+        const hitResult = absorbOrTakeHit(showGameOver, enemy);
+        if (hitResult === "kinetic") {
+          player.vx = previousMotion.vx;
+          player.vy = previousMotion.vy;
+          player.onGround = previousMotion.onGround;
+        }
+        if (hitResult !== "kinetic") {
+          game.message = "Pointy!";
+          game.messageTimer = 1;
+        }
         continue;
       }
 
@@ -64,8 +77,10 @@ function update(dt) {
       continue;
     }
 
+    if (enemy.suspendedFor > 0) continue;
+
     if (player.invulnerableFor <= 0 && playerDistanceTo(enemy) < enemy.radius + 24) {
-      absorbOrTakeHit(showGameOver);
+      absorbOrTakeHit(showGameOver, enemy);
     }
   }
 

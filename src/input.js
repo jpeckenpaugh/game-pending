@@ -12,7 +12,7 @@ export function setupInput(canvas) {
       return;
     }
 
-    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "meta", "s", "w", "r"].includes(key)) {
+    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "x", "s", "w", "r"].includes(key)) {
       event.preventDefault();
     }
 
@@ -27,7 +27,7 @@ export function setupInput(canvas) {
       return;
     }
 
-    if (key === "meta" && !keys.has(key)) game.jumpRequested = true;
+    if (key === "x" && !keys.has(key)) game.jumpRequested = true;
     if (key === "g" && !keys.has(key) && game.state === states.PLAYING) showPowerChoice(states.PLAYING);
     if (key === " ") shoot();
     if (key === "r" && game.state === states.PLAYING) beginNewGame();

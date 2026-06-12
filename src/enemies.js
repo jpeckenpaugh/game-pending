@@ -28,6 +28,13 @@ export function spawnEnemies() {
       minX: spawn.minX,
       maxX: spawn.maxX,
       phase: i * 0.9,
+      suspendedFor: 0,
+      suspendedDuration: 0,
+      suspendedStartY: 0,
+      suspendedBaseY: 0,
+      suspendedEndY: 0,
+      suspendedSpin: 0,
+      flashTimer: 0,
       alive: true,
     });
   }
@@ -124,6 +131,7 @@ function intelligenceForEnemy() {
 export function updateEnemyPositions(dt) {
   for (const enemy of enemies) {
     if (!enemy.alive) continue;
+    if (updateSuspendedEnemy(enemy, dt)) continue;
     const previousX = enemy.x;
     if ((enemy.intelligence || "simple") === "simple") {
       updateSimpleEnemy(enemy, dt);
@@ -134,6 +142,49 @@ export function updateEnemyPositions(dt) {
     }
     updateFacing(enemy, previousX);
   }
+}
+
+function updateSuspendedEnemy(enemy, dt) {
+  enemy.flashTimer = Math.max(0, (enemy.flashTimer || 0) - dt);
+  if (!enemy.suspendedFor || enemy.suspendedFor <= 0) return false;
+  enemy.suspendedFor = Math.max(0, enemy.suspendedFor - dt);
+  enemy.suspendedSpin = (enemy.suspendedSpin || 0) + dt * Math.PI * 2.3;
+  const duration = enemy.suspendedDuration || 5;
+  const elapsed = duration - enemy.suspendedFor;
+  const riseDuration = 0.55;
+  const fallDuration = 0.9;
+  const hoverBob = Math.sin(enemy.suspendedSpin * 1.4) * 5;
+  if (elapsed < riseDuration) {
+    const progress = easeOut(elapsed / riseDuration);
+    enemy.y = lerp(enemy.suspendedStartY || enemy.y, enemy.suspendedBaseY || enemy.y, progress);
+  } else if (enemy.suspendedFor < fallDuration) {
+    const progress = easeInOut(1 - enemy.suspendedFor / fallDuration);
+    enemy.y = lerp(enemy.suspendedBaseY || enemy.y, enemy.suspendedEndY || enemy.y, progress);
+  } else {
+    enemy.y = (enemy.suspendedBaseY || enemy.y) + hoverBob;
+  }
+  if (enemy.suspendedFor <= 0) {
+    enemy.y = enemy.suspendedEndY || enemy.y;
+    enemy.suspendedDuration = 0;
+    enemy.suspendedStartY = 0;
+    enemy.suspendedBaseY = 0;
+    enemy.suspendedEndY = 0;
+  }
+  return true;
+}
+
+function lerp(start, end, progress) {
+  return start + (end - start) * Math.max(0, Math.min(1, progress));
+}
+
+function easeOut(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return 1 - (1 - t) * (1 - t);
+}
+
+function easeInOut(value) {
+  const t = Math.max(0, Math.min(1, value));
+  return t * t * (3 - 2 * t);
 }
 
 function updateSimpleEnemy(enemy, dt) {

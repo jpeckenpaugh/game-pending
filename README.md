@@ -21,7 +21,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 ## Controls
 
 - `A` / `D` or Left / Right: move
-- Command: jump
+- X: jump
 - `W` / Up: aim up, throw upward, or climb up ladders
 - `S` / Down: duck, aim/throw downward when airborne or climbing, climb down ladders, or enter a ladder from above
 - Space: attack with the selected weapon
@@ -29,7 +29,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 - `G`: open a three-choice power-up picker while playing; pressing `G` again there auto-grants and rerolls
 - `R`: restart while playing
 
-Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up loadout, level, target FPS (`Auto`, `5`, `10`, `15`, `30`, `60`, or `120`), player character, weapon, opponent behavior, spawning locations, and world generation mode (`Seeded` or `Random`). Power-up loadout settings live under the Power Ups submenu; Boots, Shield, and Drone can start up to level 5. Each Boots level grants one refreshed mid-air jump.
+Menus support Up / Down / Left / Right / Enter. The Customize menu can change the game name, tagline, starting power-up loadout, level, target FPS (`Auto`, `5`, `10`, `15`, `30`, `60`, or `120`), player character, weapon, opponent behavior, spawning locations, and world generation mode (`Seeded` or `Random`). Power-up loadout settings live under the Power Ups submenu; Boots, Shield, and Drone can start up to level 10.
 
 After clearing a level, choose one of three offered power-ups before the next wave starts.
 

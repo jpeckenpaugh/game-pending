@@ -1,5 +1,6 @@
 import { camera, ctx, customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
 import { groundAt, worldToScreenX, worldToScreenY } from "./terrain.js";
+import { bootsGlideMax, droneExtraMissileMax, primaryPowerLevel, shieldKineticMax } from "./powerups.js";
 import { drawPlayerCharacter } from "./playerCharacters.js";
 import { drawWeapon } from "./weapons.js";
 
@@ -76,7 +77,8 @@ function drawLadders() {
 
 function drawTeleports() {
   ctx.lineWidth = strokeWidth(3);
-  const time = performance.now() / 900;
+  const time = performance.now() / 1800;
+  const innerOvalCount = 2;
   for (const teleport of world.teleports) {
     const x = worldToScreenX(teleport.x);
     const y = worldToScreenY(teleport.y);
@@ -91,8 +93,8 @@ function drawTeleports() {
 
     const previousAlpha = ctx.globalAlpha;
     ctx.lineWidth = strokeWidth(2);
-    for (let i = 0; i < 5; i += 1) {
-      const progress = (time + i / 5) % 1;
+    for (let i = 0; i < innerOvalCount; i += 1) {
+      const progress = (time + i / innerOvalCount) % 1;
       const scale = 0.86 - progress * 0.68;
       ctx.globalAlpha = previousAlpha * Math.max(0.08, scale * 0.85);
       ctx.beginPath();
@@ -110,23 +112,33 @@ function drawEnemy(enemy) {
   if (x < -60 || x > window.innerWidth + 60) return;
   const y = worldToScreenY(enemy.y);
 
+  ctx.save();
+  ctx.translate(x, y);
+  if (enemy.suspendedFor > 0) {
+    ctx.rotate(enemy.suspendedSpin || 0);
+  }
+  if (enemy.flashTimer > 0 && Math.floor(performance.now() / 110) % 2 === 0) {
+    ctx.globalAlpha *= 0.35;
+  }
+
   ctx.lineWidth = strokeWidth(3);
   if (enemy.family === "triangle") {
-    drawTriangleEnemy(enemy, x, y);
+    drawTriangleEnemy(enemy, 0, 0);
   } else if (enemy.family === "square") {
-    drawSquareEnemy(enemy, x, y);
+    drawSquareEnemy(enemy, 0, 0);
   } else {
-    drawCircleEnemy(enemy, x, y);
+    drawCircleEnemy(enemy, 0, 0);
   }
 
   if (enemy.movement === "runner") {
-    line(x - z(enemy.radius + 8), y + z(enemy.radius + 4), x + z(enemy.radius + 8), y + z(enemy.radius + 4));
+    line(-z(enemy.radius + 8), z(enemy.radius + 4), z(enemy.radius + 8), z(enemy.radius + 4));
   }
 
   if (enemy.movement === "hopper") {
-    line(x - z(10), y - z(enemy.radius + 8), x, y - z(enemy.radius + 2));
-    line(x + z(10), y - z(enemy.radius + 8), x, y - z(enemy.radius + 2));
+    line(-z(10), -z(enemy.radius + 8), 0, -z(enemy.radius + 2));
+    line(z(10), -z(enemy.radius + 8), 0, -z(enemy.radius + 2));
   }
+  ctx.restore();
 }
 
 function drawCircleEnemy(enemy, x, y) {
@@ -255,7 +267,7 @@ function drawPowerHud() {
   const slots = activePowerSlots();
   if (slots.length === 0) return;
   const slotWidth = 62;
-  const slotHeight = 54;
+  const slotHeight = slots.some((slot) => slot.charges?.length > 1) ? 66 : 54;
   const gap = 12;
   const totalWidth = slots.length * slotWidth + (slots.length - 1) * gap;
   const x = (window.innerWidth - totalWidth) / 2;
@@ -283,7 +295,10 @@ function activePowerSlots() {
     slots.push({
       type: "boots",
       level: powerUps.bootsLevel,
-      charge: powerUps.bootsLevel > 0 ? player.airJumpsRemaining / powerUps.bootsLevel : null,
+      charges: [
+        primaryPowerLevel(powerUps.bootsLevel) > 0 ? player.airJumpsRemaining / primaryPowerLevel(powerUps.bootsLevel) : null,
+        bootsGlideMax() > 0 ? powerUps.bootsGlideCharge / bootsGlideMax() : null,
+      ].filter((charge) => charge != null),
     });
   }
   if (powerUps.specs) slots.push({ type: "specs" });
@@ -292,22 +307,28 @@ function activePowerSlots() {
     slots.push({
       type: "shield",
       level: powerUps.shieldLevel,
-      charge: smoothChargeRatio(powerUps.shieldLevel, powerUps.shieldCharges, powerUps.shieldRecharge),
+      charges: [
+        smoothChargeRatio(primaryPowerLevel(powerUps.shieldLevel), powerUps.shieldCharges, powerUps.shieldRecharge, 10),
+        smoothChargeRatio(shieldKineticMax(), powerUps.shieldKineticCharges, powerUps.shieldKineticRecharge, 20),
+      ].filter((charge) => charge != null),
     });
   }
   if (powerUps.droneLevel) {
     slots.push({
       type: "drone",
       level: powerUps.droneLevel,
-      charge: smoothChargeRatio(powerUps.droneLevel, powerUps.droneCharges, powerUps.droneRecharge),
+      charges: [
+        smoothChargeRatio(primaryPowerLevel(powerUps.droneLevel), powerUps.droneCharges, powerUps.droneRecharge, 10),
+        smoothChargeRatio(droneExtraMissileMax(), powerUps.droneExtraMissiles, powerUps.droneExtraRecharge, 5),
+      ].filter((charge) => charge != null),
     });
   }
   return slots;
 }
 
-function smoothChargeRatio(level, charges, recharge) {
+function smoothChargeRatio(level, charges, recharge, rechargeTime) {
   if (level <= 0) return null;
-  const partial = charges < level ? Math.min(1, recharge / 10) : 0;
+  const partial = charges < level ? Math.min(1, recharge / rechargeTime) : 0;
   return Math.max(0, Math.min(1, (charges + partial) / level));
 }
 
@@ -318,13 +339,14 @@ function drawPowerHudSlot(slot, x, y, width, height) {
     ctx.textAlign = "left";
     ctx.fillText(`+${slot.level}`, x + width - 18, y + 16);
   }
-  if (slot.charge != null) {
+  const charges = slot.charges || (slot.charge != null ? [slot.charge] : []);
+  for (let i = 0; i < charges.length; i += 1) {
     const barX = x + 8;
-    const barY = y + height - 10;
+    const barY = y + height - 10 + i * 7 - (charges.length - 1) * 7;
     const barWidth = width - 16;
     ctx.lineWidth = 1.5;
     ctx.strokeRect(barX, barY, barWidth, 5);
-    ctx.fillRect(barX, barY, barWidth * Math.max(0, Math.min(1, slot.charge)), 5);
+    ctx.fillRect(barX, barY, barWidth * Math.max(0, Math.min(1, charges[i])), 5);
   }
 }
 
@@ -376,8 +398,8 @@ function drawScreenOverlay() {
     drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62), game.titleSelection === 1);
     drawHintLines(
       window.innerWidth < 560
-        ? ["Move: A/D or arrows", "Jump: Command  Aim/climb: W/Up S/Down", "Shoot: Space"]
-        : ["Move: A/D or arrows    Jump: Command    Aim/climb: W/Up S/Down    Shoot: Space"],
+        ? ["Move: A/D or arrows", "Jump: X  Aim/climb: W/Up S/Down", "Shoot: Space"]
+        : ["Move: A/D or arrows    Jump: X    Aim/climb: W/Up S/Down    Shoot: Space"],
       Math.max(366, window.innerHeight * 0.46 + 148),
       "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       20

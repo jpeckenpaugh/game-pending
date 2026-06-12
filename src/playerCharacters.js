@@ -148,35 +148,64 @@ function drawOriginalPlayer() {
 
 function drawBoots(x, y, ducking) {
   if (!powerUps.bootsLevel) return;
-  const previousAlpha = ctx.globalAlpha;
-  const previousLineWidth = ctx.lineWidth;
-  if (player.bootsPulseTimer > 0) {
-    const pulse = player.bootsPulseTimer / 0.28;
-    ctx.globalAlpha *= 0.45 + pulse * 0.55;
-    ctx.lineWidth = strokeWidth(2 + pulse * 3);
-  }
   if (ducking) {
     drawBoot(x - z(28), y - z(8), -1);
     drawBoot(x + z(12), y - z(8), 1);
-    ctx.globalAlpha = previousAlpha;
-    ctx.lineWidth = previousLineWidth;
     return;
   }
   drawBoot(x - z(22), y - z(8), -1);
   drawBoot(x + z(10), y - z(8), 1);
+}
+
+function drawBoot(x, y, side) {
+  drawBootThrust(x + z(7), y + z(8));
+  ctx.fillRect(x, y, z(14), z(8));
+  const heelX = side < 0 ? x + z(10) : x;
+  ctx.fillRect(heelX, y - z(5), z(5), z(5));
+}
+
+function drawBootThrust(x, y) {
+  const burstActive = player.bootsPulseTimer > 0;
+  const glideActive = rocketGlideVisible();
+  if (!burstActive && !glideActive) return;
+
+  const previousAlpha = ctx.globalAlpha;
+  const previousLineWidth = ctx.lineWidth;
+  ctx.lineWidth = strokeWidth(1.5);
+
+  if (player.bootsPulseTimer > 0) {
+    drawBootThrustOval(x, y, 1 - player.bootsPulseTimer / 0.28, 0.72, previousAlpha);
+  }
+
+  if (glideActive) {
+    const time = performance.now() / 1200;
+    drawBootThrustOval(x, y, time % 1, 0.24, previousAlpha);
+    drawBootThrustOval(x, y, (time + 0.5) % 1, 0.16, previousAlpha);
+  }
+
   ctx.globalAlpha = previousAlpha;
   ctx.lineWidth = previousLineWidth;
 }
 
-function drawBoot(x, y, side) {
-  ctx.fillRect(x, y, z(14), z(8));
-  const heelX = side < 0 ? x + z(10) : x;
-  ctx.fillRect(heelX, y - z(5), z(5), z(5));
-  if (player.bootsPulseTimer > 0) {
-    const pulse = player.bootsPulseTimer / 0.28;
-    const spread = z(2 + (1 - pulse) * 6);
-    ctx.strokeRect(x - spread, y - spread, z(14) + spread * 2, z(8) + spread * 2);
+function drawBootThrustOval(x, y, progress, alpha, baseAlpha) {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const centerY = y + z(5 + clamped * 24);
+  const radiusX = z(3.5 + clamped * 7);
+  const radiusY = z(1.6 + clamped * 5);
+  ctx.globalAlpha = baseAlpha * alpha * (1 - clamped);
+  ctx.beginPath();
+  ctx.ellipse(x, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function rocketGlideVisible() {
+  if (powerUps.bootsLevel <= 5 || powerUps.bootsGlideCharge <= 0) return false;
+  if (player.onGround || player.climbing || player.vy < 0) return false;
+  if (keys.has("x")) return true;
+  for (const zone of touches.values()) {
+    if (zone === "jump") return true;
   }
+  return false;
 }
 
 function drawSpecs(x, y) {
