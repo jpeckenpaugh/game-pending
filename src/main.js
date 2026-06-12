@@ -3,7 +3,7 @@ import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
 import { startLevel, showGameOver, showLevelComplete, startLevelClearCollection } from "./level.js";
-import { updateVestRecharge, absorbOrTakeHit } from "./powerups.js";
+import { updateShieldRecharge, absorbOrTakeHit } from "./powerups.js";
 import { updateDrone } from "./drone.js";
 import { updateEnemyPositions, defeatEnemy } from "./enemies.js";
 import { updateProjectiles } from "./projectiles.js";
@@ -36,7 +36,7 @@ function update(dt) {
 
   player.shootCooldown = Math.max(0, player.shootCooldown - dt);
   player.invulnerableFor = Math.max(0, player.invulnerableFor - dt);
-  updateVestRecharge(dt);
+  updateShieldRecharge(dt);
   updateDrone(dt);
 
   applyPlayerMovement(dt, groundAt);

@@ -58,16 +58,16 @@ export const drone = {
 
 export const powerUps = {
   boots: 0,
-  vestLevel: 0,
-  vestCharges: 0,
-  vestRecharge: 0,
+  shieldLevel: 0,
+  shieldCharges: 0,
+  shieldRecharge: 0,
   specs: 0,
   droneLevel: 0,
   droneCharges: 0,
   droneRecharge: 0,
 };
 
-export const powerUpPool = ["boots", "vest", "specs", "drone"];
+export const powerUpPool = ["boots", "shield", "specs", "drone"];
 
 export const states = {
   TITLE: "title",

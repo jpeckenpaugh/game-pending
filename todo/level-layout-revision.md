@@ -192,6 +192,28 @@
 - [x] Render gun bullets as small squares instead of thin horizontal lines.
 - [x] Run syntax checks after gun bullet visual update.
 
+## Power-Up Artwork Polish
+
+- [x] Add small heel squares to boot artwork.
+- [x] Replace specs eye lines with glasses circles connected by a bridge.
+- [x] Add simple two-panel vest artwork over the player chest when Vest is owned.
+- [x] Run syntax checks after power-up artwork polish.
+- [x] Replace vest box panels with thicker chest and upper-arm line overlay.
+- [x] Run syntax checks after vest artwork revision.
+- [x] Replace Vest power-up concept with Shield.
+- [x] Draw Shield as a thin force-field bubble around the player.
+- [x] Make Shield bubble thicker as shield level/charges increase.
+- [x] Add a small wrist shield transmitter opposite the weapon arm.
+- [x] Run syntax checks after Shield replacement.
+- [x] Run headless Shield block/recharge behavior probe.
+- [x] Smoke test game page after Shield replacement.
+- [x] Replace full-player Shield bubble with subtle bracelet-centered pulse rings.
+- [x] Run syntax checks after Shield pulse artwork revision.
+- [x] Smoke test game page after Shield pulse artwork revision.
+- [x] Move Shield pulse source from wrist transmitter to chest amulet.
+- [x] Run syntax checks after Shield amulet artwork revision.
+- [x] Smoke test game page after Shield amulet artwork revision.
+
 ## Opponent Behavior Customize Option
 
 - [x] Add an `Opponent Behavior` field to the Customize menu.

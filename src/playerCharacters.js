@@ -102,17 +102,18 @@ function drawOriginalPlayer() {
 
   ctx.lineWidth = strokeWidth(3);
   if (ducking) {
+    const amuletX = x - z(4) * player.facing;
+    const amuletY = y - z(27);
+    drawShieldPulse(amuletX, amuletY);
     ctx.beginPath();
     ctx.arc(x, y - z(43), z(10), 0, Math.PI * 2);
     ctx.stroke();
-    if (powerUps.specs) {
-      line(x - z(8), y - z(44), x - z(2), y - z(44));
-      line(x + z(2), y - z(44), x + z(8), y - z(44));
-    }
+    drawSpecs(x, y - z(44));
     line(x, y - z(33), x - z(5) * player.facing, y - z(18));
     const weaponX = x + z(22) * player.facing;
     const weaponY = y - z(24);
     line(x - z(5) * player.facing, y - z(18), weaponX, weaponY);
+    drawShieldAmulet(amuletX, amuletY);
     line(x - z(5) * player.facing, y - z(18), x - z(20), y);
     line(x - z(5) * player.facing, y - z(18), x + z(18), y);
     drawBoots(x, y, true);
@@ -123,11 +124,12 @@ function drawOriginalPlayer() {
   ctx.beginPath();
   ctx.arc(x, y - z(62), z(10), 0, Math.PI * 2);
   ctx.stroke();
-  if (powerUps.specs) {
-    line(x - z(8), y - z(63), x - z(2), y - z(63));
-    line(x + z(2), y - z(63), x + z(8), y - z(63));
-  }
+  drawSpecs(x, y - z(63));
   line(x, y - z(52), x, y - z(24));
+  const amuletX = x;
+  const amuletY = y - z(38);
+  drawShieldPulse(amuletX, amuletY);
+  drawShieldAmulet(amuletX, amuletY);
   line(x, y - z(43), x - z(17) * player.facing, y - z(34) + z(stride * 3));
   const weaponX = x + z(22) * player.facing;
   const weaponY = y - z(38) - z(stride * 3);
@@ -141,12 +143,66 @@ function drawOriginalPlayer() {
 function drawBoots(x, y, ducking) {
   if (!powerUps.boots) return;
   if (ducking) {
-    ctx.fillRect(x - z(28), y - z(8), z(14), z(8));
-    ctx.fillRect(x + z(12), y - z(8), z(14), z(8));
+    drawBoot(x - z(28), y - z(8), -1);
+    drawBoot(x + z(12), y - z(8), 1);
     return;
   }
-  ctx.fillRect(x - z(22), y - z(8), z(14), z(8));
-  ctx.fillRect(x + z(10), y - z(8), z(14), z(8));
+  drawBoot(x - z(22), y - z(8), -1);
+  drawBoot(x + z(10), y - z(8), 1);
+}
+
+function drawBoot(x, y, side) {
+  ctx.fillRect(x, y, z(14), z(8));
+  const heelX = side < 0 ? x + z(10) : x;
+  ctx.fillRect(heelX, y - z(5), z(5), z(5));
+}
+
+function drawSpecs(x, y) {
+  if (!powerUps.specs) return;
+  ctx.lineWidth = strokeWidth(2);
+  ctx.beginPath();
+  ctx.arc(x - z(5), y, z(3.2), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x + z(5), y, z(3.2), 0, Math.PI * 2);
+  ctx.stroke();
+  line(x - z(1.8), y, x + z(1.8), y);
+}
+
+function drawShieldPulse(x, y) {
+  if (powerUps.shieldLevel === 0) return;
+  const previousAlpha = ctx.globalAlpha;
+  const previousLineWidth = ctx.lineWidth;
+  const chargeRatio = powerUps.shieldLevel > 0 ? powerUps.shieldCharges / powerUps.shieldLevel : 0;
+  const time = performance.now() / 2200;
+  const ringCount = 3;
+  ctx.lineWidth = strokeWidth(1 + Math.min(2, powerUps.shieldLevel * 0.25 + powerUps.shieldCharges * 0.2));
+  for (let i = 0; i < ringCount; i += 1) {
+    const progress = (time + i / ringCount) % 1;
+    const radius = z(8 + progress * 34);
+    const fade = (1 - progress) * (0.12 + chargeRatio * 0.22);
+    ctx.globalAlpha = previousAlpha * fade;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = previousAlpha;
+  ctx.lineWidth = previousLineWidth;
+}
+
+function drawShieldAmulet(x, y) {
+  if (powerUps.shieldLevel === 0) return;
+  const previousLineWidth = ctx.lineWidth;
+  ctx.lineWidth = strokeWidth(2);
+  line(x - z(5), y - z(8), x, y - z(3));
+  line(x + z(5), y - z(8), x, y - z(3));
+  ctx.beginPath();
+  ctx.arc(x, y, z(4.5), 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y, z(1.5), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = previousLineWidth;
 }
 
 function drawCrocPlayer() {

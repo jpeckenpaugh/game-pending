@@ -237,7 +237,7 @@ function drawUi() {
 function drawRechargeBars(x, y) {
   let offset = 0;
   offset += drawRechargeBar("Drone", powerUps.droneLevel, powerUps.droneCharges, powerUps.droneRecharge, x, y + offset);
-  drawRechargeBar("Vest", powerUps.vestLevel, powerUps.vestCharges, powerUps.vestRecharge, x, y + offset);
+  drawRechargeBar("Shield", powerUps.shieldLevel, powerUps.shieldCharges, powerUps.shieldRecharge, x, y + offset);
 }
 
 function drawRechargeBar(label, levelCount, charges, recharge, x, y) {

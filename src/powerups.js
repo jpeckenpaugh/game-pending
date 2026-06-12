@@ -2,9 +2,9 @@ import { drone, game, powerUpPool, powerUps, projectiles, player } from "./state
 
 export function resetPowerUps() {
   powerUps.boots = 0;
-  powerUps.vestLevel = 0;
-  powerUps.vestCharges = 0;
-  powerUps.vestRecharge = 0;
+  powerUps.shieldLevel = 0;
+  powerUps.shieldCharges = 0;
+  powerUps.shieldRecharge = 0;
   powerUps.specs = 0;
   powerUps.droneLevel = 0;
   powerUps.droneCharges = 0;
@@ -22,11 +22,11 @@ export function grantRandomPowerUp() {
     return game.lastPowerUp;
   }
 
-  if (type === "vest") {
-    powerUps.vestLevel += 1;
-    powerUps.vestCharges = Math.min(powerUps.vestLevel, powerUps.vestCharges + 1);
-    powerUps.vestRecharge = powerUps.vestCharges < powerUps.vestLevel ? powerUps.vestRecharge : 0;
-    game.lastPowerUp = `Vest Lv ${powerUps.vestLevel}`;
+  if (type === "shield") {
+    powerUps.shieldLevel += 1;
+    powerUps.shieldCharges = Math.min(powerUps.shieldLevel, powerUps.shieldCharges + 1);
+    powerUps.shieldRecharge = powerUps.shieldCharges < powerUps.shieldLevel ? powerUps.shieldRecharge : 0;
+    game.lastPowerUp = `Shield Lv ${powerUps.shieldLevel}`;
     return game.lastPowerUp;
   }
 
@@ -50,9 +50,9 @@ export function grantPowerUpWithFeedback() {
 }
 
 export function rechargePowerUpsOnLevelComplete() {
-  if (powerUps.vestLevel > 0) {
-    powerUps.vestCharges = powerUps.vestLevel;
-    powerUps.vestRecharge = 0;
+  if (powerUps.shieldLevel > 0) {
+    powerUps.shieldCharges = powerUps.shieldLevel;
+    powerUps.shieldRecharge = 0;
   }
 
   if (powerUps.droneLevel > 0) {
@@ -61,28 +61,28 @@ export function rechargePowerUpsOnLevelComplete() {
   }
 }
 
-export function updateVestRecharge(dt) {
-  if (powerUps.vestLevel === 0 || powerUps.vestCharges >= powerUps.vestLevel) {
-    powerUps.vestRecharge = 0;
+export function updateShieldRecharge(dt) {
+  if (powerUps.shieldLevel === 0 || powerUps.shieldCharges >= powerUps.shieldLevel) {
+    powerUps.shieldRecharge = 0;
     return;
   }
 
-  powerUps.vestRecharge += dt;
-  if (powerUps.vestRecharge >= 10) {
-    powerUps.vestCharges += 1;
-    powerUps.vestRecharge = powerUps.vestCharges < powerUps.vestLevel ? 0 : 0;
-    game.message = "Vest recharged";
+  powerUps.shieldRecharge += dt;
+  if (powerUps.shieldRecharge >= 10) {
+    powerUps.shieldCharges += 1;
+    powerUps.shieldRecharge = powerUps.shieldCharges < powerUps.shieldLevel ? 0 : 0;
+    game.message = "Shield recharged";
     game.messageTimer = 1.4;
   }
 }
 
 export function absorbOrTakeHit(onGameOver) {
-  if (powerUps.vestCharges > 0) {
-    powerUps.vestCharges -= 1;
-    powerUps.vestRecharge = 0;
+  if (powerUps.shieldCharges > 0) {
+    powerUps.shieldCharges -= 1;
+    powerUps.shieldRecharge = 0;
     player.invulnerableFor = 1.3;
     player.vx = -player.facing * 260;
-    game.message = "Vest blocked hit";
+    game.message = "Shield blocked hit";
     game.messageTimer = 1.6;
     return;
   }
@@ -102,6 +102,6 @@ export function powerUpSummary() {
   if (powerUps.boots) active.push("Boots");
   if (powerUps.specs) active.push("Specs");
   if (powerUps.droneLevel) active.push(`Drone ${powerUps.droneCharges}/${powerUps.droneLevel}`);
-  if (powerUps.vestLevel) active.push(`Vest ${powerUps.vestCharges}/${powerUps.vestLevel}`);
+  if (powerUps.shieldLevel) active.push(`Shield ${powerUps.shieldCharges}/${powerUps.shieldLevel}`);
   return active.length > 0 ? active.join("  ") : "none";
 }
