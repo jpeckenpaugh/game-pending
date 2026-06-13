@@ -1,6 +1,8 @@
 // Owns full-screen overlays: title, pause, game over, Customize, and power-up
 // choice cards. Input hit-testing for these screens lives in input.js/customize.js.
 import { ctx, customization, game, states } from "./state.js";
+import { customizeButtonY, customizeRowBoxHeight, customizeRowHeight, customizeStartY } from "./customize.js";
+import { colorThemeLabel } from "./colorThemes.js";
 import { drawPowerIcon } from "./powerIcons.js";
 
 export function drawScreenOverlay() {
@@ -149,20 +151,24 @@ function drawPauseScreen() {
 }
 
 function drawCustomizeScreen() {
+  const compact = window.innerHeight < 700;
+  const veryCompact = window.innerHeight < 560;
+  const titleTop = veryCompact ? 38 : compact ? 54 : Math.max(90, window.innerHeight * 0.14);
+  const menuTitle = customizeMenuTitle();
   drawCenteredText([
-    { text: customization.customizeMenu === "powerUps" ? "POWER UPS" : "CUSTOMIZE", font: "30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 42 },
-    { text: customization.customizeMenu === "powerUps" ? "Starting loadout" : "Blank canvas settings", font: "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 28 },
-  ], Math.max(90, window.innerHeight * 0.18));
+    { text: menuTitle.title, font: `${veryCompact ? 24 : 30}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, gap: veryCompact ? 30 : 42 },
+    { text: menuTitle.subtitle, font: `${veryCompact ? 12 : 15}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, gap: 28 },
+  ], titleTop);
 
-  const startY = Math.max(132, window.innerHeight * 0.19);
-  const rowHeight = 34;
+  const startY = customizeStartY();
+  const rowHeight = customizeRowHeight();
   if (customization.customizeMenu === "powerUps") {
     drawCustomizeRow("startingBootsLevel", "Boots", levelLabel(customization.startingBootsLevel), startY);
     drawCustomizeRow("startingSpecs", "Specs", yesNoLabel(customization.startingSpecs), startY + rowHeight);
     drawCustomizeRow("startingRadar", "Radar", yesNoLabel(customization.startingRadar), startY + rowHeight * 2);
     drawCustomizeRow("startingShieldLevel", "Shield", levelLabel(customization.startingShieldLevel), startY + rowHeight * 3);
     drawCustomizeRow("startingDroneLevel", "Drone", levelLabel(customization.startingDroneLevel), startY + rowHeight * 4);
-    drawCustomizeRow("powerBack", "Back", "Main Menu", startY + rowHeight * 5);
+    drawCustomizeRow("powerBack", "Back", "Customize", startY + rowHeight * 5);
     drawHintLines(
       window.innerWidth < 620
         ? [customizeTooltip(customization.selectedField), "Left/Right changes values.", "Esc goes back."]
@@ -174,23 +180,47 @@ function drawCustomizeScreen() {
     return;
   }
 
-  drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY);
-  drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + rowHeight);
-  drawCustomizeRow("powerUps", "Power Ups", powerUpLoadoutLabel(), startY + rowHeight * 2);
-  drawCustomizeRow("level", "Level", String(customization.level), startY + rowHeight * 3);
-  drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + rowHeight * 4);
-  drawCustomizeRow("playerType", "Player", playerTypeLabel(customization.playerType), startY + rowHeight * 5);
-  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + rowHeight * 6);
-  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + rowHeight * 7);
-  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + rowHeight * 8);
-  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + rowHeight * 9);
+  if (customization.customizeMenu === "player") {
+    drawCustomizeRow("head", "Head", headLabel(customization.head), startY);
+    drawCustomizeRow("bigHead", "Bighead", yesNoLabel(customization.bigHead), startY + rowHeight);
+    drawCustomizeRow("face", "Face", faceLabel(customization.face), startY + rowHeight * 2);
+    drawCustomizeRow("faceStyle", "Face Style", faceStyleLabel(customization.faceStyle), startY + rowHeight * 3);
+    drawCustomizeRow("playerBack", "Back", "Customize", startY + rowHeight * 4);
+    drawSubmenuHint(startY, rowHeight, 5, compact);
+    return;
+  }
 
-  const buttonY = Math.max(startY + rowHeight * 10 + 24, window.innerHeight - 112);
+  if (customization.customizeMenu === "opponents") {
+    drawCustomizeRow("circleHead", "Circle Head", headLabel(customization.circleHead), startY);
+    drawCustomizeRow("triangleHead", "Triangle Head", headLabel(customization.triangleHead), startY + rowHeight);
+    drawCustomizeRow("squareHead", "Square Head", headLabel(customization.squareHead), startY + rowHeight * 2);
+    drawCustomizeRow("opponentFaceStyle", "Face Style", faceStyleLabel(customization.opponentFaceStyle), startY + rowHeight * 3);
+    drawCustomizeRow("opponentsBack", "Back", "Customize", startY + rowHeight * 4);
+    drawSubmenuHint(startY, rowHeight, 5, compact);
+    return;
+  }
+
+  drawCustomizeRow("template", "Template", templateLabel(customization.template), startY);
+  drawCustomizeRow("colorTheme", "Color Theme", colorThemeLabel(customization.colorTheme), startY + rowHeight);
+  drawCustomizeRow("droneStyle", "Drone", droneStyleLabel(customization.droneStyle), startY + rowHeight * 2);
+  drawCustomizeRow("name", "Name", customization.name || "Game Pending", startY + rowHeight * 3);
+  drawCustomizeRow("tagline", "Tagline", customization.tagline || "Name Pending", startY + rowHeight * 4);
+  drawCustomizeRow("powerUps", "Power Ups", powerUpLoadoutLabel(), startY + rowHeight * 5);
+  drawCustomizeRow("playerOptions", "Player", playerOptionsLabel(), startY + rowHeight * 6);
+  drawCustomizeRow("opponents", "Opponents", opponentsLabel(), startY + rowHeight * 7);
+  drawCustomizeRow("level", "Level", String(customization.level), startY + rowHeight * 8);
+  drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + rowHeight * 9);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + rowHeight * 10);
+  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + rowHeight * 11);
+  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + rowHeight * 12);
+  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + rowHeight * 13);
+
+  const buttonY = customizeButtonY(14);
   drawSplitButtons("SAVE", "CANCEL", buttonY);
 
   drawHintLines(
-    window.innerWidth < 620
-      ? [customizeTooltip(customization.selectedField), "Left/Right changes values.", "Enter saves. Esc cancels."]
+    window.innerWidth < 620 || compact
+      ? [customizeTooltip(customization.selectedField), "Left/Right changes. Enter saves. Esc cancels."]
       : [customizeTooltip(customization.selectedField), "Use arrows to select. Type text. Left/Right changes values. Enter activates Save/Cancel. Esc cancels."],
     buttonY + 76,
     "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -198,8 +228,80 @@ function drawCustomizeScreen() {
   );
 }
 
-function playerTypeLabel(playerType) {
-  return playerType === "croc" ? "Croc" : "Original";
+function customizeMenuTitle() {
+  if (customization.customizeMenu === "powerUps") {
+    return { title: "POWER UPS", subtitle: "Starting loadout" };
+  }
+  if (customization.customizeMenu === "player") {
+    return { title: "PLAYER", subtitle: "Head and face" };
+  }
+  if (customization.customizeMenu === "opponents") {
+    return { title: "OPPONENTS", subtitle: "Circle triangle square" };
+  }
+  return { title: "CUSTOMIZE", subtitle: "Blank canvas settings" };
+}
+
+function drawSubmenuHint(startY, rowHeight, rowCount, compact) {
+  drawHintLines(
+    window.innerWidth < 620 || compact
+      ? [customizeTooltip(customization.selectedField), "Left/Right changes. Esc goes back."]
+      : [customizeTooltip(customization.selectedField), "Use arrows to select. Left/Right changes values. Enter on Back returns. Esc goes back."],
+    startY + rowHeight * rowCount + 36,
+    "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+    20
+  );
+}
+
+function templateLabel(template) {
+  if (template === "classic") return "Classic";
+  if (template === "emojiColor") return "Emoji (Color)";
+  if (template === "aquatic") return "Aquatic";
+  if (template === "farm") return "Farm";
+  if (template === "robot") return "Robot";
+  return "Custom";
+}
+
+function headLabel(head) {
+  if (head === "classic") return "Classic";
+  if (head === "dog") return "Dog";
+  if (head === "cat") return "Kat";
+  if (head === "frog") return "Frog";
+  if (head === "horse") return "Horse";
+  if (head === "fish") return "Fish";
+  if (head === "robot") return "Robot";
+  if (head === "skull") return "Skull";
+  if (head === "alien") return "Alien";
+  return "Stick";
+}
+
+function faceLabel(face) {
+  if (face === "emoji") return "Emoji";
+  return "Classic";
+}
+
+function faceStyleLabel(faceStyle) {
+  if (faceStyle === "greyscale") return "Greyscale";
+  if (faceStyle === "color") return "Color";
+  return "Monochrome";
+}
+
+function droneStyleLabel(droneStyle) {
+  if (droneStyle === "helicopter") return "Helicopter";
+  if (droneStyle === "satellite") return "Satellite";
+  if (droneStyle === "saucer") return "Flying Saucer";
+  return "Oval";
+}
+
+function playerOptionsLabel() {
+  if (customization.face !== "emoji") return "Classic";
+  const size = customization.bigHead ? " Bighead" : "";
+  return `${headLabel(customization.head)} Emoji${size}`;
+}
+
+function opponentsLabel() {
+  const heads = [customization.circleHead, customization.triangleHead, customization.squareHead];
+  if (heads.every((head) => head === "classic")) return "Classic";
+  return heads.map(headLabel).join("/");
 }
 
 function weaponTypeLabel(weaponType) {
@@ -248,9 +350,14 @@ function spawningLocationsLabel(spawningLocations) {
 }
 
 function customizeTooltip(field) {
+  if (field === "template") return "Applies a preset bundle of player and opponent faces.";
+  if (field === "colorTheme") return "Changes world, opponent, gear, weapon, attack, and drone colors.";
+  if (field === "droneStyle") return "Changes the Drone power-up aircraft silhouette.";
   if (field === "name") return "Sets the title shown on menu screens.";
   if (field === "tagline") return "Sets the subtitle shown under the title.";
   if (field === "powerUps") return "Opens starting power-up loadout settings.";
+  if (field === "playerOptions") return "Opens player head, Bighead, face, and style settings.";
+  if (field === "opponents") return "Opens opponent head and face style settings.";
   if (field === "startingBootsLevel") return "Sets Boots level; early levels add jumps, later levels add glide.";
   if (field === "startingSpecs") return "Starts each new game with Specs auto-aim enabled.";
   if (field === "startingRadar") return "Starts each new game with Radar direction tracking enabled.";
@@ -258,7 +365,14 @@ function customizeTooltip(field) {
   if (field === "startingDroneLevel") return "Sets the starting Drone level and full charges.";
   if (field === "level") return "Chooses the starting level and world size.";
   if (field === "targetFps") return "Caps render rate; Auto adapts when the game gets busy.";
-  if (field === "playerType") return "Changes the player character art.";
+  if (field === "head") return "Chooses the emoji-style head shape.";
+  if (field === "bigHead") return "Doubles emoji-style heads again.";
+  if (field === "face") return "Enables reactive emoji-style player expressions.";
+  if (field === "faceStyle") return "Changes emoji-style faces between line, grey, and color.";
+  if (field === "circleHead") return "Chooses the Circle opponent head.";
+  if (field === "triangleHead") return "Chooses the Triangle opponent head.";
+  if (field === "squareHead") return "Chooses the Square opponent head.";
+  if (field === "opponentFaceStyle") return "Changes opponent faces between line, grey, and color.";
   if (field === "weaponType") return "Changes the weapon and projectile style.";
   if (field === "opponentIntelligence") return "Controls whether opponents patrol, vary, chase, retreat, or mix behaviors.";
   if (field === "spawningLocations") return "Standard spreads opponents by area; Randomized shuffles valid locations.";
@@ -266,6 +380,8 @@ function customizeTooltip(field) {
   if (field === "save") return "Applies these settings.";
   if (field === "cancel") return "Restores the previous settings.";
   if (field === "powerBack") return "Returns to the main Customize menu.";
+  if (field === "playerBack") return "Returns to the main Customize menu.";
+  if (field === "opponentsBack") return "Returns to the main Customize menu.";
   return "Customize game settings.";
 }
 
@@ -291,9 +407,12 @@ function drawCustomizeRow(field, label, value, y) {
   const width = Math.min(520, window.innerWidth - 48);
   const x = Math.max(24, window.innerWidth * 0.5 - 260);
   const selected = customization.selectedField === field;
+  const rowHeight = customizeRowHeight();
+  const boxHeight = customizeRowBoxHeight();
+  const fontSize = rowHeight < 28 ? 12 : rowHeight < 34 ? 13 : 15;
 
   ctx.lineWidth = selected ? 3 : 1;
-  ctx.strokeRect(x, y, width, 32);
-  ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-  ctx.fillText(`${label}: ${value}`, x + 12, y + 21);
+  ctx.strokeRect(x, y, width, boxHeight);
+  ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  ctx.fillText(`${label}: ${value}`, x + 12, y + Math.max(16, boxHeight * 0.68));
 }

@@ -1,6 +1,6 @@
 // Owns level lifecycle: reset transient state, build the world, spawn enemies,
 // and move between title/play/pause/choice/game-over flows.
-import { customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, states, world } from "./state.js";
+import { customization, drone, drops, enemies, game, particles, player, powerUps, projectiles, resetPlayerFaceMood, setPlayerFaceMood, states, world } from "./state.js";
 import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
 import { applyStartingPowerUps, grantPowerUp, powerUpChoiceOptions, primaryPowerLevel, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
@@ -43,6 +43,7 @@ export function startLevel(nextLevel) {
   player.invulnerableFor = 1.2;
   player.airJumpsRemaining = primaryPowerLevel(powerUps.bootsLevel);
   player.bootsPulseTimer = 0;
+  resetPlayerFaceMood();
   player.ammo = Math.max(player.ammo, 10);
   centerCameraOnPlayer();
 
@@ -140,6 +141,7 @@ export function grantAndRefreshPowerChoice() {
 export function startLevelClearCollection() {
   game.completedLevel = game.level;
   game.state = states.LEVEL_COLLECTING;
+  setPlayerFaceMood("smile", 2.2, 6);
   game.levelClearTimer = drops.length > 0 ? 1.2 : 0.45;
   projectiles.length = 0;
   particles.length = 0;
@@ -155,6 +157,7 @@ export function startLevelClearCollection() {
 }
 
 export function showGameOver() {
+  setPlayerFaceMood("hurt", 4, 7);
   game.state = states.GAME_OVER;
   game.message = "";
   game.messageTimer = 0;

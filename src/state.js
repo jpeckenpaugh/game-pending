@@ -40,6 +40,9 @@ export const player = {
   climbing: false,
   airJumpsRemaining: 0,
   bootsPulseTimer: 0,
+  faceMood: "smile",
+  faceMoodTimer: 0,
+  faceMoodPriority: 0,
 };
 
 export const camera = { x: 0, y: 0, zoom: 1 };
@@ -103,7 +106,17 @@ export const customization = {
   startingDroneLevel: 0,
   level: 1,
   targetFps: "auto",
-  playerType: "original",
+  template: "custom",
+  colorTheme: "classic",
+  droneStyle: "oval",
+  head: "stick",
+  bigHead: 0,
+  face: "classic",
+  faceStyle: "monochrome",
+  circleHead: "classic",
+  triangleHead: "classic",
+  squareHead: "classic",
+  opponentFaceStyle: "monochrome",
   weaponType: "gun",
   opponentIntelligence: "mixed",
   spawningLocations: "standard",
@@ -120,7 +133,17 @@ export const customization = {
   savedStartingDroneLevel: 0,
   savedLevel: 1,
   savedTargetFps: "auto",
-  savedPlayerType: "original",
+  savedTemplate: "custom",
+  savedColorTheme: "classic",
+  savedDroneStyle: "oval",
+  savedHead: "stick",
+  savedBigHead: 0,
+  savedFace: "classic",
+  savedFaceStyle: "monochrome",
+  savedCircleHead: "classic",
+  savedTriangleHead: "classic",
+  savedSquareHead: "classic",
+  savedOpponentFaceStyle: "monochrome",
   savedWeaponType: "gun",
   savedOpponentIntelligence: "mixed",
   savedSpawningLocations: "standard",
@@ -167,3 +190,30 @@ export const game = {
   teleportZoomInStartZoom: 1,
   teleportMoved: false,
 };
+
+const faceMoodPriorities = {
+  smile: 1,
+  angry: 2,
+  surprised: 3,
+  crying: 4,
+  hurt: 5,
+};
+
+export function setPlayerFaceMood(mood, duration = 0.9, priority = faceMoodPriorities[mood] || 1) {
+  if (player.faceMoodTimer > 0 && priority < player.faceMoodPriority) return;
+  player.faceMood = mood;
+  player.faceMoodTimer = Math.max(0, duration);
+  player.faceMoodPriority = priority;
+}
+
+export function resetPlayerFaceMood() {
+  player.faceMood = "smile";
+  player.faceMoodTimer = 0;
+  player.faceMoodPriority = 0;
+}
+
+export function updatePlayerFaceMood(dt) {
+  if (player.faceMoodTimer <= 0) return;
+  player.faceMoodTimer = Math.max(0, player.faceMoodTimer - dt);
+  if (player.faceMoodTimer === 0) resetPlayerFaceMood();
+}

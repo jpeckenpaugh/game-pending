@@ -1,6 +1,8 @@
 // Owns enemy rendering only. Movement, AI, defeat, and suspension timers stay
 // in enemies.js so this module can stay stateless and purely visual.
-import { camera, ctx } from "./state.js";
+import { camera, ctx, customization } from "./state.js";
+import { activeColorTheme, enemyThemeColor } from "./colorThemes.js";
+import { drawEmojiHead } from "./playerCharacters.js";
 import { worldToScreenX, worldToScreenY } from "./terrain.js";
 
 function line(x1, y1, x2, y2) {
@@ -54,8 +56,15 @@ export function drawEnemy(enemy) {
 }
 
 function drawCircleEnemy(enemy, x, y) {
+  if (drawCustomEnemyHead(enemy, x, y)) return;
+
+  const fill = enemyBodyFill(enemy);
   ctx.beginPath();
   ctx.arc(x, y, z(enemy.radius), 0, Math.PI * 2);
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
   ctx.stroke();
 
   line(x - z(8), y - z(5), x - z(2), y - z(5));
@@ -63,11 +72,18 @@ function drawCircleEnemy(enemy, x, y) {
 }
 
 function drawTriangleEnemy(enemy, x, y) {
+  if (drawCustomEnemyHead(enemy, x, y)) return;
+
+  const fill = enemyBodyFill(enemy);
   ctx.beginPath();
   ctx.moveTo(x, y - z(enemy.radius));
   ctx.lineTo(x - z(enemy.radius), y + z(enemy.radius));
   ctx.lineTo(x + z(enemy.radius), y + z(enemy.radius));
   ctx.closePath();
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
   ctx.stroke();
 
   line(x - z(8), y + z(3), x - z(2), y + z(3));
@@ -75,14 +91,92 @@ function drawTriangleEnemy(enemy, x, y) {
 }
 
 function drawSquareEnemy(enemy, x, y) {
+  if (drawCustomEnemyHead(enemy, x, y)) return;
+
+  const fill = enemyBodyFill(enemy);
   const radius = z(enemy.radius);
   const size = radius * 2;
+  if (fill) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x - radius, y - radius, size, size);
+  }
   ctx.strokeRect(x - radius, y - radius, size, size);
-  const shieldX = x + enemy.facing * z(enemy.radius + 8);
-  line(shieldX, y - radius, shieldX, y + radius);
-  line(shieldX, y - radius, shieldX + enemy.facing * z(8), y - radius + z(6));
-  line(shieldX, y + radius, shieldX + enemy.facing * z(8), y + radius - z(6));
+  drawSquareShield(enemy, x, y, radius);
 
   line(x - z(8), y - z(5), x - z(2), y - z(5));
   line(x + z(2), y - z(5), x + z(8), y - z(5));
+}
+
+function drawCustomEnemyHead(enemy, x, y) {
+  const head = enemyHeadForFamily(enemy.family);
+  if (head === "classic") return false;
+
+  const fill = enemyBodyFill(enemy);
+  const markerRadius = z(enemy.radius * 1.18);
+  const headRadius = z(enemy.radius * 0.95);
+  ctx.save();
+  ctx.lineWidth = strokeWidth(2);
+  if (fill) {
+    ctx.globalAlpha *= 0.56;
+    ctx.fillStyle = fill;
+    drawFamilyMarker(enemy.family, x, y, markerRadius, true);
+  } else {
+    ctx.globalAlpha *= 0.42;
+  }
+  ctx.strokeStyle = activeColorTheme().ink;
+  drawFamilyMarker(enemy.family, x, y, markerRadius);
+  ctx.restore();
+
+  drawEmojiHead(head, enemyFaceForFamily(enemy), customization.opponentFaceStyle, x, y, headRadius);
+  if (enemy.family === "square") drawSquareShield(enemy, x, y, markerRadius * 0.92);
+  return true;
+}
+
+function enemyBodyFill(enemy) {
+  const theme = activeColorTheme();
+  return enemyThemeColor(theme, enemy.colorIndex);
+}
+
+function enemyHeadForFamily(family) {
+  if (family === "triangle") return customization.triangleHead || "classic";
+  if (family === "square") return customization.squareHead || "classic";
+  return customization.circleHead || "classic";
+}
+
+function enemyFaceForFamily(enemy) {
+  if (enemy.flashTimer > 0) return "hurt";
+  if (enemy.family === "triangle") return "angry";
+  if (enemy.family === "square") return "surprised";
+  return "smile";
+}
+
+function drawFamilyMarker(family, x, y, radius, fill = false) {
+  if (family === "triangle") {
+    ctx.beginPath();
+    ctx.moveTo(x, y - radius);
+    ctx.lineTo(x - radius, y + radius);
+    ctx.lineTo(x + radius, y + radius);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    else ctx.stroke();
+    return;
+  }
+
+  if (family === "square") {
+    if (fill) ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    else ctx.strokeRect(x - radius, y - radius, radius * 2, radius * 2);
+    return;
+  }
+
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  if (fill) ctx.fill();
+  else ctx.stroke();
+}
+
+function drawSquareShield(enemy, x, y, radius) {
+  const shieldX = x + enemy.facing * (radius + z(8));
+  line(shieldX, y - radius, shieldX, y + radius);
+  line(shieldX, y - radius, shieldX + enemy.facing * z(8), y - radius + z(6));
+  line(shieldX, y + radius, shieldX + enemy.facing * z(8), y + radius - z(6));
 }

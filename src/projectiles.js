@@ -1,6 +1,6 @@
 // Owns player-fired projectiles, weapon aiming, projectile lifetime, and shot
 // collision with enemies. Drone missiles share the homing update path here.
-import { customization, enemies, game, keys, player, powerUps, projectiles, states, touches, world } from "./state.js";
+import { customization, enemies, game, keys, player, powerUps, projectiles, setPlayerFaceMood, states, touches, world } from "./state.js";
 import { nearestEnemy } from "./targeting.js";
 import { isDucking } from "./player.js";
 import { defeatEnemy } from "./enemies.js";
@@ -15,6 +15,7 @@ export function shoot() {
   const velocity = shotVelocity(shotY, weaponType);
   player.ammo -= 1;
   player.shootCooldown = 0.18;
+  setPlayerFaceMood("angry", 0.55, 2);
   projectiles.push({
     x: player.x + player.facing * 24,
     y: shotY,

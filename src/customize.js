@@ -1,22 +1,110 @@
-// Owns Customize menu state transitions and value editing.
-// Rendering lives in menus.js; this module only decides what field/action changed.
+// Owns Customize menu state transitions, value editing, and shared layout metrics.
+// Rendering lives in menus.js; this module decides what field/action changed.
 import { customization, game, states } from "./state.js";
 import { startLevel } from "./level.js";
+import { colorThemeTypes } from "./colorThemes.js";
 
-const mainCustomizeFields = ["name", "tagline", "powerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
-const mainCustomizeRows = ["name", "tagline", "powerUps", "level", "targetFps", "playerType", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
+const mainCustomizeFields = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
+const mainCustomizeRows = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
 const powerCustomizeFields = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
 const powerCustomizeRows = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
-export const customizeFields = [...mainCustomizeFields, ...powerCustomizeFields];
-const customizeRowHeight = 34;
+const playerCustomizeFields = ["head", "bigHead", "face", "faceStyle", "playerBack"];
+const playerCustomizeRows = ["head", "bigHead", "face", "faceStyle", "playerBack"];
+const opponentCustomizeFields = ["circleHead", "triangleHead", "squareHead", "opponentFaceStyle", "opponentsBack"];
+const opponentCustomizeRows = ["circleHead", "triangleHead", "squareHead", "opponentFaceStyle", "opponentsBack"];
+export const customizeFields = [...mainCustomizeFields, ...powerCustomizeFields, ...playerCustomizeFields, ...opponentCustomizeFields];
 const defaultName = "Game Pending";
 const defaultTagline = "Name Pending";
-const playerTypes = ["original", "croc"];
+const templateTypes = ["custom", "classic", "emojiColor", "aquatic", "farm", "robot"];
+const headTypes = ["stick", "dog", "cat", "frog", "horse", "fish", "robot", "skull", "alien"];
+const opponentHeadTypes = ["classic", ...headTypes];
+const bigHeadTypes = [0, 1];
+const faceTypes = ["classic", "emoji"];
+const faceStyleTypes = ["monochrome", "greyscale", "color"];
+const droneStyleTypes = ["oval", "helicopter", "satellite", "saucer"];
 const weaponTypes = ["gun", "club", "wand"];
 const opponentIntelligenceTypes = ["simple", "random", "bold", "shy", "mixed"];
 const spawningLocationTypes = ["standard", "randomized"];
 const worldGenerationTypes = ["seeded", "random"];
 const targetFpsOptions = ["auto", 5, 10, 15, 30, 60, 120];
+const templateControlledFields = ["head", "bigHead", "face", "faceStyle", "circleHead", "triangleHead", "squareHead", "opponentFaceStyle"];
+const templateSettings = {
+  classic: {
+    head: "stick",
+    bigHead: 0,
+    face: "classic",
+    faceStyle: "monochrome",
+    circleHead: "classic",
+    triangleHead: "classic",
+    squareHead: "classic",
+    opponentFaceStyle: "monochrome",
+  },
+  emojiColor: {
+    head: "stick",
+    bigHead: 0,
+    face: "emoji",
+    faceStyle: "color",
+    circleHead: "dog",
+    triangleHead: "cat",
+    squareHead: "robot",
+    opponentFaceStyle: "color",
+  },
+  aquatic: {
+    head: "fish",
+    bigHead: 0,
+    face: "emoji",
+    faceStyle: "color",
+    circleHead: "fish",
+    triangleHead: "frog",
+    squareHead: "skull",
+    opponentFaceStyle: "color",
+  },
+  farm: {
+    head: "horse",
+    bigHead: 0,
+    face: "emoji",
+    faceStyle: "color",
+    circleHead: "dog",
+    triangleHead: "cat",
+    squareHead: "horse",
+    opponentFaceStyle: "color",
+  },
+  robot: {
+    head: "robot",
+    bigHead: 0,
+    face: "emoji",
+    faceStyle: "greyscale",
+    circleHead: "alien",
+    triangleHead: "robot",
+    squareHead: "alien",
+    opponentFaceStyle: "greyscale",
+  },
+};
+
+export function customizeRowHeight() {
+  if (window.innerHeight < 560) return 22;
+  if (window.innerHeight < 700) return 26;
+  if (window.innerHeight < 760) return 30;
+  return 34;
+}
+
+export function customizeRowBoxHeight() {
+  return Math.min(32, customizeRowHeight() - 2);
+}
+
+export function customizeStartY() {
+  if (window.innerHeight < 560) return 78;
+  if (window.innerHeight < 700) return 96;
+  if (window.innerHeight < 760) return 152;
+  return Math.max(152, window.innerHeight * 0.2);
+}
+
+export function customizeButtonY(rowCount) {
+  const compact = window.innerHeight < 700;
+  const afterRows = customizeStartY() + rowCount * customizeRowHeight() + (compact ? 10 : 24);
+  const bottomY = window.innerHeight - (window.innerHeight < 560 ? 56 : compact ? 78 : 112);
+  return Math.min(bottomY, afterRows);
+}
 
 export function openCustomize(returnState = states.TITLE) {
   game.state = states.CUSTOMIZE;
@@ -32,7 +120,17 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedStartingDroneLevel = customization.startingDroneLevel;
   customization.savedLevel = customization.level;
   customization.savedTargetFps = customization.targetFps;
-  customization.savedPlayerType = customization.playerType;
+  customization.savedTemplate = customization.template;
+  customization.savedColorTheme = customization.colorTheme;
+  customization.savedDroneStyle = customization.droneStyle;
+  customization.savedHead = customization.head;
+  customization.savedBigHead = customization.bigHead;
+  customization.savedFace = customization.face;
+  customization.savedFaceStyle = customization.faceStyle;
+  customization.savedCircleHead = customization.circleHead;
+  customization.savedTriangleHead = customization.triangleHead;
+  customization.savedSquareHead = customization.squareHead;
+  customization.savedOpponentFaceStyle = customization.opponentFaceStyle;
   customization.savedWeaponType = customization.weaponType;
   customization.savedOpponentIntelligence = customization.opponentIntelligence;
   customization.savedSpawningLocations = customization.spawningLocations;
@@ -57,7 +155,17 @@ export function cancelCustomize() {
   customization.startingDroneLevel = customization.savedStartingDroneLevel;
   customization.level = customization.savedLevel;
   customization.targetFps = customization.savedTargetFps;
-  customization.playerType = customization.savedPlayerType;
+  customization.template = customization.savedTemplate;
+  customization.colorTheme = customization.savedColorTheme;
+  customization.droneStyle = customization.savedDroneStyle;
+  customization.head = customization.savedHead;
+  customization.bigHead = customization.savedBigHead;
+  customization.face = customization.savedFace;
+  customization.faceStyle = customization.savedFaceStyle;
+  customization.circleHead = customization.savedCircleHead;
+  customization.triangleHead = customization.savedTriangleHead;
+  customization.squareHead = customization.savedSquareHead;
+  customization.opponentFaceStyle = customization.savedOpponentFaceStyle;
   customization.weaponType = customization.savedWeaponType;
   customization.opponentIntelligence = customization.savedOpponentIntelligence;
   customization.spawningLocations = customization.savedSpawningLocations;
@@ -75,21 +183,23 @@ export function titleButtonAt(x, y) {
 }
 
 export function customizeActionAt(x, y) {
-  const startY = Math.max(132, window.innerHeight * 0.19);
+  const startY = customizeStartY();
+  const rowHeight = customizeRowHeight();
+  const rowBoxHeight = customizeRowBoxHeight();
   const rows = currentRows();
   for (let i = 0; i < rows.length; i += 1) {
     const row = {
       x: Math.max(24, window.innerWidth * 0.5 - 260),
-      y: startY + i * customizeRowHeight,
+      y: startY + i * rowHeight,
       width: Math.min(520, window.innerWidth - 48),
-      height: 32,
+      height: rowBoxHeight,
     };
     if (inside(x, y, row)) return rows[i];
   }
 
-  if (customization.customizeMenu === "powerUps") return "";
+  if (customization.customizeMenu !== "main") return "";
 
-  const buttonY = Math.max(startY + mainCustomizeRows.length * customizeRowHeight + 24, window.innerHeight - 112);
+  const buttonY = customizeButtonY(mainCustomizeRows.length);
   if (inside(x, y, splitButtonRect(buttonY, "left"))) return "save";
   if (inside(x, y, splitButtonRect(buttonY, "right"))) return "cancel";
   return "";
@@ -100,8 +210,8 @@ export function handleCustomizeKey(event) {
   const lower = key.toLowerCase();
 
   if (lower === "escape") {
-    if (customization.customizeMenu === "powerUps") {
-      closePowerUpsMenu();
+    if (customization.customizeMenu !== "main") {
+      closeCurrentSubmenu();
       return true;
     }
     cancelCustomize();
@@ -137,7 +247,11 @@ export function handleCustomizeKey(event) {
     if (customization.selectedField === "save") saveCustomize();
     else if (customization.selectedField === "cancel") cancelCustomize();
     else if (customization.selectedField === "powerUps") openPowerUpsMenu();
+    else if (customization.selectedField === "playerOptions") openPlayerMenu();
+    else if (customization.selectedField === "opponents") openOpponentsMenu();
     else if (customization.selectedField === "powerBack") closePowerUpsMenu();
+    else if (customization.selectedField === "playerBack") closePlayerMenu();
+    else if (customization.selectedField === "opponentsBack") closeOpponentsMenu();
     else selectRelativeField(1);
     return true;
   }
@@ -181,12 +295,12 @@ export function handleCustomizeKey(event) {
     return false;
   }
 
-  if (lower === "backspace") {
+  if (isTextField() && lower === "backspace") {
     setSelectedText(getSelectedText().slice(0, -1));
     return true;
   }
 
-  if (key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
+  if (isTextField() && key.length === 1 && !event.metaKey && !event.ctrlKey && !event.altKey) {
     const current = getSelectedText();
     const next = selectedTextIsDefault() ? key : current + key;
     setSelectedText(next.slice(0, 28));
@@ -205,14 +319,31 @@ export function cycleCustomizeOption(field, offset = 1) {
     openPowerUpsMenu();
     return;
   }
+  if (field === "playerOptions") {
+    openPlayerMenu();
+    return;
+  }
+  if (field === "opponents") {
+    openOpponentsMenu();
+    return;
+  }
   if (field === "powerBack") {
     closePowerUpsMenu();
+    return;
+  }
+  if (field === "playerBack") {
+    closePlayerMenu();
+    return;
+  }
+  if (field === "opponentsBack") {
+    closeOpponentsMenu();
     return;
   }
   if (isNumberField(field)) {
     stepNumberField(field, offset);
     return;
   }
+  if (!isOptionField(field)) return;
   selectRelativeOption(field, offset);
 }
 
@@ -245,14 +376,30 @@ function stepNumberField(field, offset) {
 
 function selectRelativeOption(field, offset) {
   const options = optionSetForField(field);
+  if (options.length === 0) return;
   const current = customization[field];
   const index = options.indexOf(current);
   const next = (index + offset + options.length) % options.length;
+  if (field === "template") {
+    applyTemplate(options[next]);
+    return;
+  }
   customization[field] = options[next];
+  if (templateControlledFields.includes(field)) customization.template = "custom";
 }
 
 function isOptionField(field) {
-  return field === "playerType"
+  return field === "template"
+    || field === "colorTheme"
+    || field === "droneStyle"
+    || field === "head"
+    || field === "bigHead"
+    || field === "face"
+    || field === "faceStyle"
+    || field === "circleHead"
+    || field === "triangleHead"
+    || field === "squareHead"
+    || field === "opponentFaceStyle"
     || field === "weaponType"
     || field === "worldGeneration"
     || field === "targetFps"
@@ -261,12 +408,21 @@ function isOptionField(field) {
 }
 
 function optionSetForField(field) {
+  if (field === "template") return templateTypes;
+  if (field === "colorTheme") return colorThemeTypes;
+  if (field === "droneStyle") return droneStyleTypes;
+  if (field === "head") return headTypes;
+  if (field === "bigHead") return bigHeadTypes;
+  if (field === "face") return faceTypes;
+  if (field === "faceStyle") return faceStyleTypes;
+  if (field === "circleHead" || field === "triangleHead" || field === "squareHead") return opponentHeadTypes;
+  if (field === "opponentFaceStyle") return faceStyleTypes;
   if (field === "weaponType") return weaponTypes;
   if (field === "opponentIntelligence") return opponentIntelligenceTypes;
   if (field === "spawningLocations") return spawningLocationTypes;
   if (field === "worldGeneration") return worldGenerationTypes;
   if (field === "targetFps") return targetFpsOptions;
-  return playerTypes;
+  return [];
 }
 
 function getSelectedText() {
@@ -280,11 +436,17 @@ function isTextField() {
 }
 
 function currentFields() {
-  return customization.customizeMenu === "powerUps" ? powerCustomizeFields : mainCustomizeFields;
+  if (customization.customizeMenu === "powerUps") return powerCustomizeFields;
+  if (customization.customizeMenu === "player") return playerCustomizeFields;
+  if (customization.customizeMenu === "opponents") return opponentCustomizeFields;
+  return mainCustomizeFields;
 }
 
 function currentRows() {
-  return customization.customizeMenu === "powerUps" ? powerCustomizeRows : mainCustomizeRows;
+  if (customization.customizeMenu === "powerUps") return powerCustomizeRows;
+  if (customization.customizeMenu === "player") return playerCustomizeRows;
+  if (customization.customizeMenu === "opponents") return opponentCustomizeRows;
+  return mainCustomizeRows;
 }
 
 function openPowerUpsMenu() {
@@ -295,6 +457,41 @@ function openPowerUpsMenu() {
 function closePowerUpsMenu() {
   customization.customizeMenu = "main";
   customization.selectedField = "powerUps";
+}
+
+function openPlayerMenu() {
+  customization.customizeMenu = "player";
+  customization.selectedField = "head";
+}
+
+function closePlayerMenu() {
+  customization.customizeMenu = "main";
+  customization.selectedField = "playerOptions";
+}
+
+function openOpponentsMenu() {
+  customization.customizeMenu = "opponents";
+  customization.selectedField = "circleHead";
+}
+
+function closeOpponentsMenu() {
+  customization.customizeMenu = "main";
+  customization.selectedField = "opponents";
+}
+
+function closeCurrentSubmenu() {
+  if (customization.customizeMenu === "powerUps") closePowerUpsMenu();
+  else if (customization.customizeMenu === "player") closePlayerMenu();
+  else if (customization.customizeMenu === "opponents") closeOpponentsMenu();
+}
+
+function applyTemplate(template) {
+  customization.template = template;
+  const settings = templateSettings[template];
+  if (!settings) return;
+  for (const [field, value] of Object.entries(settings)) {
+    customization[field] = value;
+  }
 }
 
 function selectedTextIsDefault() {

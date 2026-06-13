@@ -18,6 +18,7 @@ Keep new behavior in the closest existing module:
 - Enemy drawing: `src/enemyArt.js`
 - HUD drawing: `src/hud.js`
 - Menu and overlay drawing: `src/menus.js`
+- Color theme palettes and labels: `src/colorThemes.js`
 - Shared power-up icons: `src/powerIcons.js`
 - Selectable player art: `src/playerCharacters.js`
 - Player-attached power-up art and held weapon drawing: `src/playerPowerArt.js`
@@ -39,7 +40,8 @@ Avoid moving unrelated code while implementing a feature. The repo may already h
 ## Style
 
 - Use ES modules and plain browser APIs.
-- Keep drawing black-and-white unless the requested feature explicitly needs color.
+- Keep new drawing compatible with the Classic black-and-white theme; when a feature needs color, add palette values in `src/colorThemes.js`.
+- Drawing modules should consume the active theme instead of hard-coding preset-specific colors.
 - Prefer Canvas vector drawing commands, `Path2D`, or small SVG-style path data over bitmap assets.
 - Keep UI text short enough to fit on mobile and desktop.
 - Use existing state objects from `src/state.js` instead of creating hidden globals.

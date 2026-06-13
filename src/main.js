@@ -1,6 +1,6 @@
 // Owns the main loop and high-level update order. Most domain behavior lives in
 // focused modules; this file coordinates camera, phase flow, and system updates.
-import { camera, canvas, ctx, customization, drops, enemies, game, player, states, world } from "./state.js";
+import { camera, canvas, ctx, customization, drops, enemies, game, player, states, updatePlayerFaceMood, world } from "./state.js";
 import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
@@ -20,6 +20,7 @@ function titleZoomForContent() {
 
 function update(dt) {
   if (game.messageTimer > 0) game.messageTimer -= dt;
+  updatePlayerFaceMood(dt);
   if (game.wrapTimer > 0) game.wrapTimer = Math.max(0, game.wrapTimer - dt);
   if (game.teleportPhase !== "idle") {
     updateTeleport(dt);

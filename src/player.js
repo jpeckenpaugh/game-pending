@@ -1,6 +1,6 @@
 // Owns player movement, collision with walkable surfaces/ladders, jump buffering,
 // stomp checks, teleport triggering, and Boots glide movement.
-import { game, keys, player, powerUps, states, touches, world } from "./state.js";
+import { game, keys, player, powerUps, setPlayerFaceMood, states, touches, world } from "./state.js";
 import { groundAt, ladderAt, ladderEntryAt, ladderExitSurfaceAt, landingSurfaceAt, oppositeTeleport, teleportAt } from "./terrain.js";
 import { bootsGlideMax, primaryPowerLevel } from "./powerups.js";
 
@@ -226,6 +226,7 @@ function wrapPlayerIfNeeded() {
   game.teleportToX = destinationX;
   game.teleportToY = destinationY;
   game.teleportMoved = false;
+  setPlayerFaceMood("surprised", 1.6, 4);
   player.vy = 0;
   player.vx = 0;
   player.climbing = false;

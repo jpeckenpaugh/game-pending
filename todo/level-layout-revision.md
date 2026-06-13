@@ -1,5 +1,16 @@
 # Level Layout Revision Checklist
 
+This is a chronological implementation checklist. Some earlier completed items describe intermediate states that were later superseded; the current behavior is summarized here before the historical checklist.
+
+## Current State Summary
+
+- Keyboard jump/glide is `X`. Up/W and Down/S are used for aiming and ladder movement, with Down/S also ducking on the ground.
+- The arena is lightly generated from reusable terrain, platform, ladder, cave, and teleport patterns. `Seeded` generation is deterministic from current settings and level; `Random` varies each run.
+- Boots, Shield, and Drone now scale to level 10. Levels 1-5 are primary charges/capacity; levels 6-10 add Boots glide charge, Shield kinetic discharge, and Drone extra missiles.
+- Customize now includes templates, color themes, drone style, player head/face settings, opponent head settings, starting power-up loadout, target FPS, weapon, opponent behavior, spawning locations, and world generation.
+- Classic remains black-and-white. Colored themes apply palettes across sky, terrain, materials, opponents, gear, weapons, attacks, and drone art.
+- Player and opponent emoji-style heads are Canvas vector drawings, not browser/system emoji glyphs.
+
 ## Phase 1 - Level Shape and Spawn
 
 - [x] Define the new level as a 3 x 3 exploration arena instead of a single left-to-right strip.
@@ -363,4 +374,4 @@
 ## Open Questions
 
 - [x] Use a hidden deterministic seed based on current settings and level for the first implementation.
-- [ ] Should the 3 x 3 layout be hand-authored for every level shape at first, or lightly generated from reusable region templates?
+- [x] Use lightly generated reusable arena patterns rather than hand-authoring every level shape.

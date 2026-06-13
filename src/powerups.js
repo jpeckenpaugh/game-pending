@@ -1,6 +1,6 @@
 // Owns power-up level caps, grants, recharge accounting, and shield collision
 // outcomes. Runtime movement/firing is handled by player.js and drone.js.
-import { customization, drone, game, powerUpPool, powerUps, projectiles, player } from "./state.js";
+import { customization, drone, game, powerUpPool, powerUps, projectiles, player, setPlayerFaceMood } from "./state.js";
 import { groundAt, surfaceById, surfaceYAt } from "./terrain.js";
 
 // Tier helpers keep levels 1-5 as primary capacity and 6-10 as secondary capacity.
@@ -221,11 +221,13 @@ export function absorbOrTakeHit(onGameOver, enemy = null) {
       powerUps.shieldKineticCharges -= 1;
       powerUps.shieldKineticRecharge = 0;
       suspendEnemy(enemy);
+      setPlayerFaceMood("surprised", 1, 5);
       game.message = "Kinetic discharge";
       game.messageTimer = 1.6;
       return "kinetic";
     }
     player.vx = -player.facing * 260;
+    setPlayerFaceMood("surprised", 0.9, 4);
     game.message = "Shield blocked hit";
     game.messageTimer = 1.6;
     return "shield";
@@ -234,6 +236,7 @@ export function absorbOrTakeHit(onGameOver, enemy = null) {
   player.ammo = Math.max(0, player.ammo - 2);
   player.invulnerableFor = 1.3;
   player.vx = -player.facing * 260;
+  setPlayerFaceMood("crying", 1.5, 6);
   game.message = "Hit! Ammo lost.";
   game.messageTimer = 1.6;
   if (player.ammo === 0 && projectiles.length === 0) {

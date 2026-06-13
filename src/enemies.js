@@ -1,6 +1,6 @@
 // Owns enemy spawning, movement AI, defeat bookkeeping, and kinetic suspension state.
 // Visual enemy drawing lives in enemyArt.js.
-import { customization, drops, enemies, game, player } from "./state.js";
+import { customization, drops, enemies, game, player, setPlayerFaceMood } from "./state.js";
 import { addBurst } from "./effects.js";
 import { groundAt, nearTeleportBuffer, surfaceYAt, walkableSurfaces } from "./terrain.js";
 
@@ -37,6 +37,7 @@ export function spawnEnemies() {
       suspendedEndY: 0,
       suspendedSpin: 0,
       flashTimer: 0,
+      colorIndex: Math.floor(Math.random() * 1024),
       alive: true,
     });
   }
@@ -274,6 +275,7 @@ function updateFacing(enemy, previousX) {
 export function defeatEnemy(enemy) {
   if (!enemy.alive) return;
   enemy.alive = false;
+  setPlayerFaceMood("angry", 0.6, 2);
   game.enemiesRemaining -= 1;
   drops.push({ x: enemy.x, y: enemy.y, amount: 2, bob: 0 });
   addBurst(enemy.x, enemy.y, 8);
