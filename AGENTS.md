@@ -2,38 +2,38 @@
 
 ## Project Basics
 
-This is a vanilla JavaScript Canvas game. Keep it dependency-free unless there is a strong reason to add tooling. The app is served directly from the repo root with:
+This is a vanilla JavaScript Canvas game. Keep it dependency-free unless there is a strong reason to add tooling. The app is served from the `html/` directory:
 
 ```sh
-python3 -m http.server 8000
+python3 -m http.server 8000 -d html
 ```
 
-Use `http://localhost:8000/` for local browser testing. Because `index.html` loads ES modules, do not rely on `file://` testing.
+Or via Docker (see `docker-compose.yml`). Use `http://localhost:8000/` for local browser testing. Because `index.html` loads ES modules, do not rely on `file://` testing.
 
 ## Code Organization
 
 Keep new behavior in the closest existing module:
 
-- Terrain, portals, projectiles, and draw orchestration: `src/render.js`
-- Enemy drawing: `src/enemyArt.js`
-- HUD drawing: `src/hud.js`
-- Menu and overlay drawing: `src/menus.js`
-- Color theme palettes and labels: `src/colorThemes.js`
-- Shared power-up icons: `src/powerIcons.js`
-- Selectable player art: `src/playerCharacters.js`
-- Player-attached power-up art and held weapon drawing: `src/playerPowerArt.js`
-- Selectable weapon art: `src/weapons.js`
-- Movement, jump charges, rocket glide, and stomp rules: `src/player.js`
-- Enemy spawning, AI, and suspension state: `src/enemies.js`
-- Projectiles, directional aiming, and shot collisions: `src/projectiles.js`
-- Power-up grants, starting loadouts, tier caps, recharge, and shield effects: `src/powerups.js`
-- Drone-specific behavior: `src/drone.js`
-- Customize menu logic: `src/customize.js`
-- Input routing: `src/input.js`
-- Terrain, platforms, ladders, caves, teleports, and coordinate conversion: `src/terrain.js`
-- Particles and burst effects: `src/effects.js`
-- Enemy targeting helpers: `src/targeting.js`
-- Shared state: `src/state.js`
+- Terrain, portals, projectiles, and draw orchestration: `html/src/render.js`
+- Enemy drawing: `html/src/enemyArt.js`
+- HUD drawing: `html/src/hud.js`
+- Menu and overlay drawing: `html/src/menus.js`
+- Color theme palettes and labels: `html/src/colorThemes.js`
+- Shared power-up icons: `html/src/powerIcons.js`
+- Selectable player art: `html/src/playerCharacters.js`
+- Player-attached power-up art and held weapon drawing: `html/src/playerPowerArt.js`
+- Selectable weapon art: `html/src/weapons.js`
+- Movement, jump charges, rocket glide, and stomp rules: `html/src/player.js`
+- Enemy spawning, AI, and suspension state: `html/src/enemies.js`
+- Projectiles, directional aiming, and shot collisions: `html/src/projectiles.js`
+- Power-up grants, starting loadouts, tier caps, recharge, and shield effects: `html/src/powerups.js`
+- Drone-specific behavior: `html/src/drone.js`
+- Customize menu logic: `html/src/customize.js`
+- Input routing: `html/src/input.js`
+- Terrain, platforms, ladders, caves, teleports, and coordinate conversion: `html/src/terrain.js`
+- Particles and burst effects: `html/src/effects.js`
+- Enemy targeting helpers: `html/src/targeting.js`
+- Shared state: `html/src/state.js`
 
 Avoid moving unrelated code while implementing a feature. The repo may already have user changes in progress, so inspect diffs before editing and do not revert unrelated modifications.
 
@@ -52,7 +52,7 @@ Avoid moving unrelated code while implementing a feature. The repo may already h
 At minimum, run:
 
 ```sh
-for f in src/*.js; do node --check "$f" || exit 1; done
+for f in html/src/*.js; do node --check "$f" || exit 1; done
 ```
 
 For frontend changes, also serve the app and smoke test the relevant flow in a browser when possible.

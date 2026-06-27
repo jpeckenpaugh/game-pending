@@ -7,7 +7,7 @@ A small HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules.
 From the repository root:
 
 ```sh
-python3 -m http.server 8000
+python3 -m http.server 8000 -d html
 ```
 
 Then open:
@@ -62,28 +62,28 @@ Levels are generated as expanding multi-area arenas with upper platforms, underg
 
 ## Project Structure
 
-- `index.html`: page shell and canvas
-- `src/main.js`: game loop and high-level update flow
-- `src/state.js`: shared mutable game state
-- `src/render.js`: terrain, portals, projectiles, and overall draw order
-- `src/enemyArt.js`: enemy drawing, including suspended/flash rendering
-- `src/hud.js`: framed top HUD and bottom power-up icon/charge HUD
-- `src/menus.js`: title, pause, customize, game-over, and power-choice overlays
-- `src/colorThemes.js`: optional sky, terrain, material, gear, weapon, attack, drone, and opponent color palettes
-- `src/powerIcons.js`: reusable power-up icon artwork for HUD and choice cards
-- `src/playerCharacters.js`: selectable player renderers, face expressions, and teleport effects
-- `src/playerPowerArt.js`: player-attached power-up visuals and held weapon drawing
-- `src/weapons.js`: selectable weapon renderers, including Gun, Club, and Wand
-- `src/player.js`: player movement, jumping, rocket glide, ducking, and stomp checks
-- `src/enemies.js`: enemy creation, behavior, and kinetic suspension state
-- `src/projectiles.js`: player attacks, directional aiming, projectile lifetimes, homing shots, and shot collisions
-- `src/powerups.js`: power-up grants, starting loadout, tier caps, recharge, and shield effects
-- `src/drone.js`: drone power-up behavior
-- `src/customize.js`: Customize menu state and keyboard behavior
-- `src/input.js`: keyboard, mouse, touch, and menu input routing
-- `src/terrain.js`: terrain, platforms, ladders, caves, teleports, world bounds, and world/screen conversion
-- `src/effects.js`: small visual effects
-- `src/targeting.js`: enemy targeting helpers
+- `html/index.html`: page shell and canvas
+- `html/src/main.js`: game loop and high-level update flow
+- `html/src/state.js`: shared mutable game state
+- `html/src/render.js`: terrain, portals, projectiles, and overall draw order
+- `html/src/enemyArt.js`: enemy drawing, including suspended/flash rendering
+- `html/src/hud.js`: framed top HUD and bottom power-up icon/charge HUD
+- `html/src/menus.js`: title, pause, customize, game-over, and power-choice overlays
+- `html/src/colorThemes.js`: optional sky, terrain, material, gear, weapon, attack, drone, and opponent color palettes
+- `html/src/powerIcons.js`: reusable power-up icon artwork for HUD and choice cards
+- `html/src/playerCharacters.js`: selectable player renderers, face expressions, and teleport effects
+- `html/src/playerPowerArt.js`: player-attached power-up visuals and held weapon drawing
+- `html/src/weapons.js`: selectable weapon renderers, including Gun, Club, and Wand
+- `html/src/player.js`: player movement, jumping, rocket glide, ducking, and stomp checks
+- `html/src/enemies.js`: enemy creation, behavior, and kinetic suspension state
+- `html/src/projectiles.js`: player attacks, directional aiming, projectile lifetimes, homing shots, and shot collisions
+- `html/src/powerups.js`: power-up grants, starting loadout, tier caps, recharge, and shield effects
+- `html/src/drone.js`: drone power-up behavior
+- `html/src/customize.js`: Customize menu state and keyboard behavior
+- `html/src/input.js`: keyboard, mouse, touch, and menu input routing
+- `html/src/terrain.js`: terrain, platforms, ladders, caves, teleports, world bounds, and world/screen conversion
+- `html/src/effects.js`: small visual effects
+- `html/src/targeting.js`: enemy targeting helpers
 
 ## Notes
 
