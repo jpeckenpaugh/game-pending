@@ -1,2 +1,2 @@
-# API keys
-docker/config/auth.json
+.DS_Store
+auth.json
