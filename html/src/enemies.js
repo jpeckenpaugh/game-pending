@@ -1,7 +1,8 @@
 // Owns enemy spawning, movement AI, defeat bookkeeping, and kinetic suspension state.
 // Visual enemy drawing lives in enemyArt.js.
-import { customization, drops, enemies, game, player, setPlayerFaceMood } from "./state.js";
-import { addBurst } from "./effects.js";
+import { customization, drops, enemies, game, mirrorQueue, player, projectiles, setPlayerFaceMood } from "./state.js";
+import { addBurst, addShatter } from "./effects.js";
+import { playEnemyDefeat } from "./audio.js";
 import { groundAt, nearTeleportBuffer, surfaceYAt, walkableSurfaces } from "./terrain.js";
 
 export function spawnEnemies() {
@@ -11,8 +12,8 @@ export function spawnEnemies() {
     const cycle = Math.floor(i / spawnPoints.length);
     const x = Math.max(70, Math.min(spawn.maxX, spawn.x + cycle * 52));
     const family = enemyFamilyForIndex(i);
-    const movement = enemyMovementForIndex(i);
-    const radius = movement === "runner" ? 18 : 24;
+    const movement = family === "mirror" ? "mirror" : enemyMovementForIndex(i);
+    const radius = movement === "runner" ? 18 : movement === "mirror" ? 22 : 24;
     enemies.push({
       family,
       movement,
@@ -116,6 +117,7 @@ function shuffled(points) {
 }
 
 function enemyFamilyForIndex(index) {
+  if (index > 0 && index % 8 === 0) return "mirror";
   if (index > 0 && index % 6 === 0) return "square";
   if (index > 0 && index % 5 === 0) return "triangle";
   return "circle";
@@ -137,6 +139,10 @@ export function updateEnemyPositions(dt) {
   for (const enemy of enemies) {
     if (!enemy.alive) continue;
     if (updateSuspendedEnemy(enemy, dt)) continue;
+    if (enemy.movement === "mirror") {
+      updateMirrorEnemy(enemy, dt);
+      continue;
+    }
     const previousX = enemy.x;
     if ((enemy.intelligence || "simple") === "simple") {
       updateSimpleEnemy(enemy, dt);
@@ -257,6 +263,73 @@ function updateSimpleEnemyFromCurrent(enemy, dt) {
   enemy.y = surfaceHeight(enemy) - enemy.radius - hop;
 }
 
+function updateMirrorEnemy(enemy, dt) {
+  const now = performance.now() / 1000;
+  const replayDelay = 2;
+  let targetEntry = null;
+
+  const hoverY = groundAt(enemy.x) - 160;
+
+  for (let i = mirrorQueue.length - 1; i >= 0; i -= 1) {
+    if (now - mirrorQueue[i].timestamp >= replayDelay) {
+      targetEntry = mirrorQueue[i];
+      break;
+    }
+  }
+
+  if (!targetEntry) {
+    const dx = player.x - enemy.x;
+    const dy = hoverY - enemy.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist > 4) {
+      enemy.x += (dx / dist) * 120 * dt;
+      enemy.y += (dy / dist) * 80 * dt;
+    }
+    enemy.phase += dt * 2;
+    return;
+  }
+
+  const targetX = targetEntry.x;
+  const targetY = hoverY;
+  const dx = targetX - enemy.x;
+  const dy = targetY - enemy.y;
+  const dist = Math.hypot(dx, dy);
+  const speed = 320;
+
+  if (dist > 4) {
+    enemy.x += (dx / dist) * speed * dt;
+    enemy.y += (dy / dist) * speed * dt;
+  }
+
+  enemy.facing = dx > 0 ? 1 : dx < 0 ? -1 : enemy.facing;
+
+  if (targetEntry.jumped) {
+    enemy.y -= 60;
+  }
+
+  if (targetEntry.shot && (!enemy.shotCooldown || enemy.shotCooldown <= 0)) {
+    const shotY = enemy.y;
+    projectiles.push({
+      x: enemy.x + enemy.facing * 24,
+      y: shotY,
+      vx: enemy.facing * 3040,
+      vy: 0,
+      weaponType: "gun",
+      gravity: 0,
+      rotation: 0,
+      hitEnemies: null,
+      life: null,
+      radius: 4,
+    });
+    enemy.shotCooldown = 0.4;
+  }
+
+  enemy.y = Math.min(enemy.y, hoverY);
+
+  if (enemy.shotCooldown > 0) enemy.shotCooldown -= dt;
+  enemy.phase += dt * 2.5;
+}
+
 function surfaceHeight(enemy) {
   if (enemy.surfaceId === "ground") return groundAt(enemy.x);
   const surface = walkableSurfaces().find((item) => item.id === enemy.surfaceId);
@@ -277,6 +350,12 @@ export function defeatEnemy(enemy) {
   enemy.alive = false;
   setPlayerFaceMood("angry", 0.6, 2);
   game.enemiesRemaining -= 1;
+  if (enemy.family === "mirror") {
+    addShatter(enemy.x, enemy.y, 12);
+    playEnemyDefeat();
+    return;
+  }
   drops.push({ x: enemy.x, y: enemy.y, amount: 2, bob: 0 });
   addBurst(enemy.x, enemy.y, 8);
+  playEnemyDefeat();
 }

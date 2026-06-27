@@ -4,6 +4,7 @@ import { customization, drone, drops, enemies, game, particles, player, powerUps
 import { buildTerrain, centerCameraOnPlayer } from "./terrain.js";
 import { spawnEnemies } from "./enemies.js";
 import { applyStartingPowerUps, grantPowerUp, powerUpChoiceOptions, primaryPowerLevel, rechargePowerUpsOnLevelComplete, resetPowerUps } from "./powerups.js";
+import { playLevelComplete, playHit } from "./audio.js";
 
 export function startLevel(nextLevel) {
   game.level = nextLevel;
@@ -148,6 +149,7 @@ export function startLevelClearCollection() {
   player.vx = 0;
   game.message = "";
   game.messageTimer = 0;
+  playLevelComplete();
 
   for (const drop of drops) {
     drop.collecting = true;
@@ -161,6 +163,7 @@ export function showGameOver() {
   game.state = states.GAME_OVER;
   game.message = "";
   game.messageTimer = 0;
+  playHit();
 }
 
 export function activateCurrentScreen() {

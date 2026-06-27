@@ -2,9 +2,10 @@
 // collision with enemies. Drone missiles share the homing update path here.
 import { customization, enemies, game, keys, player, powerUps, projectiles, setPlayerFaceMood, states, touches, world } from "./state.js";
 import { nearestEnemy } from "./targeting.js";
-import { isDucking } from "./player.js";
+import { isDucking, markMirrorShot } from "./player.js";
 import { defeatEnemy } from "./enemies.js";
 import { landingSurfaceAt } from "./terrain.js";
+import { playShoot } from "./audio.js";
 
 export function shoot() {
   if (game.state !== states.PLAYING || player.shootCooldown > 0 || player.ammo <= 0) return;
@@ -33,6 +34,8 @@ export function shoot() {
     game.message = "Out of ammo. Collect + drops.";
     game.messageTimer = 2.4;
   }
+  playShoot();
+  markMirrorShot();
 }
 
 function shotVelocity(shotY, weaponType) {

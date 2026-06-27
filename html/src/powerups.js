@@ -2,6 +2,7 @@
 // outcomes. Runtime movement/firing is handled by player.js and drone.js.
 import { customization, drone, game, powerUpPool, powerUps, projectiles, player, setPlayerFaceMood } from "./state.js";
 import { groundAt, surfaceById, surfaceYAt } from "./terrain.js";
+import { playPowerUp } from "./audio.js";
 
 // Tier helpers keep levels 1-5 as primary capacity and 6-10 as secondary capacity.
 export function primaryPowerLevel(level) {
@@ -40,6 +41,10 @@ export function resetPowerUps() {
   powerUps.droneRecharge = 0;
   powerUps.droneExtraMissiles = 0;
   powerUps.droneExtraRecharge = 0;
+  powerUps.hasteLevel = 0;
+  powerUps.hasteRecharge = 0;
+  powerUps.dashCharges = 0;
+  powerUps.dashMaxCharges = 0;
   drone.active = false;
   drone.extraShotsRemaining = 0;
   drone.extraShotTimer = 0;
@@ -66,6 +71,7 @@ export function applyStartingPowerUps() {
 
 // Grants advance one power level at a time while preserving current charge state.
 export function grantPowerUp(type) {
+  playPowerUp();
   if (type === "boots") {
     powerUps.bootsLevel = Math.min(10, powerUps.bootsLevel + 1);
     player.airJumpsRemaining = Math.max(player.airJumpsRemaining, primaryPowerLevel(powerUps.bootsLevel));
@@ -98,6 +104,16 @@ export function grantPowerUp(type) {
     return game.lastPowerUp;
   }
 
+  if (type === "haste") {
+    powerUps.hasteLevel = Math.min(10, powerUps.hasteLevel + 1);
+    if (powerUps.hasteLevel > 5) {
+      powerUps.dashMaxCharges = powerUps.hasteLevel - 5;
+      powerUps.dashCharges = Math.min(powerUps.dashMaxCharges, powerUps.dashCharges + 1);
+    }
+    game.lastPowerUp = `Haste Lv ${powerUps.hasteLevel}`;
+    return game.lastPowerUp;
+  }
+
   powerUps.specs = 1;
   game.lastPowerUp = "Specs";
   return game.lastPowerUp;
@@ -121,6 +137,7 @@ function powerUpCanImprove(type) {
   if (type === "boots") return powerUps.bootsLevel < 10;
   if (type === "shield") return powerUps.shieldLevel < 10;
   if (type === "drone") return powerUps.droneLevel < 10;
+  if (type === "haste") return powerUps.hasteLevel < 10;
   if (type === "specs") return !powerUps.specs;
   if (type === "radar") return !powerUps.radar;
   return true;
@@ -130,6 +147,7 @@ function powerUpInfo(type) {
   if (type === "boots") return { type, name: "Boots", description: powerUps.bootsLevel >= 5 ? "Adds rocket glide charge." : "Adds a mid-air jump." };
   if (type === "shield") return { type, name: "Shield", description: powerUps.shieldLevel >= 5 ? "Adds kinetic stun charge." : "Blocks one hit per charge." };
   if (type === "drone") return { type, name: "Drone", description: powerUps.droneLevel >= 5 ? "Adds extra drone missiles." : "Calls in air support." };
+  if (type === "haste") return { type, name: "Haste", description: powerUps.hasteLevel >= 5 ? "Adds a forward dash with invulnerability." : "Increases movement speed." };
   if (type === "radar") return { type, name: "Radar", description: "Points to the nearest enemy." };
   return { type: "specs", name: "Specs", description: "Auto-aims ranged attacks." };
 }
@@ -161,6 +179,12 @@ export function rechargePowerUpsOnLevelComplete() {
   if (powerUps.bootsLevel > 0) {
     powerUps.bootsGlideCharge = bootsGlideMax();
     powerUps.bootsGlideCooldown = 0;
+  }
+
+  if (powerUps.hasteLevel > 5) {
+    powerUps.dashMaxCharges = powerUps.hasteLevel - 5;
+    powerUps.dashCharges = powerUps.dashMaxCharges;
+    powerUps.hasteRecharge = 0;
   }
 }
 
@@ -209,6 +233,20 @@ export function updateBootsGlideRecharge(dt) {
   }
 
   powerUps.bootsGlideCharge = Math.min(max, powerUps.bootsGlideCharge + dt);
+}
+
+// Runtime recharge for Haste dash charges (1 per 8 seconds).
+export function updateHasteRecharge(dt) {
+  if (powerUps.hasteLevel <= 5 || powerUps.dashMaxCharges <= 0) return;
+  if (powerUps.dashCharges >= powerUps.dashMaxCharges) {
+    powerUps.hasteRecharge = 0;
+    return;
+  }
+  powerUps.hasteRecharge += dt;
+  if (powerUps.hasteRecharge >= 8) {
+    powerUps.dashCharges = Math.min(powerUps.dashMaxCharges, powerUps.dashCharges + 1);
+    powerUps.hasteRecharge = 0;
+  }
 }
 
 // Shield absorption owns the collision outcome; callers handle game-over flow.

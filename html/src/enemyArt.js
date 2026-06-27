@@ -40,6 +40,8 @@ export function drawEnemy(enemy) {
     drawTriangleEnemy(enemy, 0, 0);
   } else if (enemy.family === "square") {
     drawSquareEnemy(enemy, 0, 0);
+  } else if (enemy.family === "mirror") {
+    drawMirrorEnemy(enemy, 0, 0);
   } else {
     drawCircleEnemy(enemy, 0, 0);
   }
@@ -179,4 +181,37 @@ function drawSquareShield(enemy, x, y, radius) {
   line(shieldX, y - radius, shieldX, y + radius);
   line(shieldX, y - radius, shieldX + enemy.facing * z(8), y - radius + z(6));
   line(shieldX, y + radius, shieldX + enemy.facing * z(8), y + radius - z(6));
+}
+
+function drawMirrorEnemy(enemy, x, y) {
+  const r = z(enemy.radius);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.lineTo(x + r, y);
+  ctx.lineTo(x, y + r);
+  ctx.lineTo(x - r, y);
+  ctx.closePath();
+  ctx.globalAlpha *= 0.18;
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.globalAlpha = Math.min(1, ctx.globalAlpha / 0.18);
+  ctx.stroke();
+
+  ctx.setLineDash([z(4), z(4)]);
+  ctx.lineWidth = strokeWidth(1.5);
+  ctx.beginPath();
+  ctx.moveTo(x - r * 0.5, y - r * 0.5);
+  ctx.lineTo(x + r * 0.5, y + r * 0.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + r * 0.5, y - r * 0.5);
+  ctx.lineTo(x - r * 0.5, y + r * 0.5);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.lineWidth = strokeWidth(3);
+  line(x - z(6), y - z(4), x - z(1), y - z(4));
+  line(x + z(1), y - z(4), x + z(6), y - z(4));
+  ctx.restore();
 }

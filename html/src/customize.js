@@ -4,8 +4,8 @@ import { customization, game, states } from "./state.js";
 import { startLevel } from "./level.js";
 import { colorThemeTypes } from "./colorThemes.js";
 
-const mainCustomizeFields = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
-const mainCustomizeRows = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
+const mainCustomizeFields = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "sfxVolume", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration", "save", "cancel"];
+const mainCustomizeRows = ["template", "colorTheme", "droneStyle", "name", "tagline", "powerUps", "playerOptions", "opponents", "level", "targetFps", "sfxVolume", "weaponType", "opponentIntelligence", "spawningLocations", "worldGeneration"];
 const powerCustomizeFields = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
 const powerCustomizeRows = ["startingBootsLevel", "startingSpecs", "startingRadar", "startingShieldLevel", "startingDroneLevel", "powerBack"];
 const playerCustomizeFields = ["head", "bigHead", "face", "faceStyle", "playerBack"];
@@ -111,6 +111,8 @@ export function openCustomize(returnState = states.TITLE) {
   customization.selectedField = "name";
   customization.customizeMenu = "main";
   customization.returnState = returnState;
+  customization.savedSfxVolume = customization.sfxVolume;
+  game.sfxVolume = customization.sfxVolume / 10;
   customization.savedName = customization.name;
   customization.savedTagline = customization.tagline;
   customization.savedStartingBootsLevel = customization.startingBootsLevel;
@@ -135,9 +137,11 @@ export function openCustomize(returnState = states.TITLE) {
   customization.savedOpponentIntelligence = customization.opponentIntelligence;
   customization.savedSpawningLocations = customization.spawningLocations;
   customization.savedWorldGeneration = customization.worldGeneration;
+  customization.savedSfxVolume = customization.sfxVolume;
 }
 
 export function saveCustomize() {
+  game.sfxVolume = customization.sfxVolume / 10;
   if (customization.returnState === states.TITLE || customization.returnState === states.PAUSED) {
     startLevel(customization.level);
   }
@@ -170,6 +174,8 @@ export function cancelCustomize() {
   customization.opponentIntelligence = customization.savedOpponentIntelligence;
   customization.spawningLocations = customization.savedSpawningLocations;
   customization.worldGeneration = customization.savedWorldGeneration;
+  customization.sfxVolume = customization.savedSfxVolume;
+  game.sfxVolume = customization.sfxVolume / 10;
   customization.customizeMenu = "main";
   game.state = customization.returnState;
 }
@@ -360,18 +366,21 @@ function isNumberField(field) {
     || field === "startingSpecs"
     || field === "startingRadar"
     || field === "startingShieldLevel"
-    || field === "startingDroneLevel";
+    || field === "startingDroneLevel"
+    || field === "sfxVolume";
 }
 
 function numberBounds(field) {
   if (field === "level") return { min: 1, max: 99 };
   if (field === "startingBootsLevel" || field === "startingShieldLevel" || field === "startingDroneLevel") return { min: 0, max: 10 };
+  if (field === "sfxVolume") return { min: 0, max: 10 };
   return { min: 0, max: 1 };
 }
 
 function stepNumberField(field, offset) {
   const { min, max } = numberBounds(field);
   customization[field] = Math.max(min, Math.min(max, customization[field] + offset));
+  if (field === "sfxVolume") game.sfxVolume = customization.sfxVolume / 10;
 }
 
 function selectRelativeOption(field, offset) {

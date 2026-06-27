@@ -111,6 +111,15 @@ function activePowerSlots() {
       ].filter((charge) => charge != null),
     });
   }
+  if (powerUps.hasteLevel) {
+    slots.push({
+      type: "haste",
+      level: powerUps.hasteLevel,
+      charges: [
+        powerUps.hasteLevel > 5 ? powerUps.dashCharges / powerUps.dashMaxCharges : null,
+      ].filter((charge) => charge != null),
+    });
+  }
   return slots;
 }
 

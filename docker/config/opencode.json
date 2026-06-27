@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/deepseek-v4-flash",
+  "provider": {
+    "openrouter": {
+      "models": {
+        "openai/gpt-4o": {
+          "options": {
+            "temperature": 0.9,
+            "topP": 0.95
+          }
+        },
+        "anthropic/claude-sonnet-4": {
+          "options": {
+            "temperature": 0.8
+          }
+        }
+      }
+    }
+  }
+}

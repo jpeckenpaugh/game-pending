@@ -49,6 +49,18 @@ export function drawPowerIcon(type, x, y, scale = 1) {
     ctx.beginPath();
     ctx.arc(14, -14, 5, 0, Math.PI * 2);
     ctx.fill();
+  } else if (type === "haste") {
+    ctx.strokeStyle = themedColor(theme, "gear", "radar") || theme.ink;
+    ctx.beginPath();
+    ctx.moveTo(-4, -18);
+    ctx.lineTo(6, -18);
+    ctx.lineTo(2, -4);
+    ctx.lineTo(10, -4);
+    ctx.lineTo(-2, 18);
+    ctx.lineTo(2, 4);
+    ctx.lineTo(-6, 4);
+    ctx.closePath();
+    ctx.stroke();
   } else {
     ctx.strokeStyle = themedColor(theme, "gear", "specs") || theme.ink;
     ctx.beginPath();

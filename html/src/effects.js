@@ -14,6 +14,21 @@ export function addBurst(x, y, count) {
   }
 }
 
+export function addShatter(x, y, count) {
+  for (let i = 0; i < count; i += 1) {
+    const angle = (i / count) * Math.PI * 2;
+    const speed = 80 + Math.random() * 120;
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.6,
+      shatter: true,
+    });
+  }
+}
+
 export function updateParticles(dt) {
   for (let i = particles.length - 1; i >= 0; i -= 1) {
     const particle = particles[i];

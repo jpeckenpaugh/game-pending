@@ -210,12 +210,13 @@ function drawCustomizeScreen() {
   drawCustomizeRow("opponents", "Opponents", opponentsLabel(), startY + rowHeight * 7);
   drawCustomizeRow("level", "Level", String(customization.level), startY + rowHeight * 8);
   drawCustomizeRow("targetFps", "Target FPS", targetFpsLabel(customization.targetFps), startY + rowHeight * 9);
-  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + rowHeight * 10);
-  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + rowHeight * 11);
-  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + rowHeight * 12);
-  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + rowHeight * 13);
+  drawVolumeRow("sfxVolume", "Volume", startY + rowHeight * 10);
+  drawCustomizeRow("weaponType", "Weapon", weaponTypeLabel(customization.weaponType), startY + rowHeight * 11);
+  drawCustomizeRow("opponentIntelligence", "Opponent Behavior", opponentIntelligenceLabel(customization.opponentIntelligence), startY + rowHeight * 12);
+  drawCustomizeRow("spawningLocations", "Spawning Locations", spawningLocationsLabel(customization.spawningLocations), startY + rowHeight * 13);
+  drawCustomizeRow("worldGeneration", "World Generation", worldGenerationLabel(customization.worldGeneration), startY + rowHeight * 14);
 
-  const buttonY = customizeButtonY(14);
+  const buttonY = customizeButtonY(15);
   drawSplitButtons("SAVE", "CANCEL", buttonY);
 
   drawHintLines(
@@ -365,6 +366,7 @@ function customizeTooltip(field) {
   if (field === "startingDroneLevel") return "Sets the starting Drone level and full charges.";
   if (field === "level") return "Chooses the starting level and world size.";
   if (field === "targetFps") return "Caps render rate; Auto adapts when the game gets busy.";
+  if (field === "sfxVolume") return "Controls sound effect volume from muted to full.";
   if (field === "head") return "Chooses the emoji-style head shape.";
   if (field === "bigHead") return "Doubles emoji-style heads again.";
   if (field === "face") return "Enables reactive emoji-style player expressions.";
@@ -415,4 +417,63 @@ function drawCustomizeRow(field, label, value, y) {
   ctx.strokeRect(x, y, width, boxHeight);
   ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
   ctx.fillText(`${label}: ${value}`, x + 12, y + Math.max(16, boxHeight * 0.68));
+}
+
+function drawVolumeRow(field, label, y) {
+  const width = Math.min(520, window.innerWidth - 48);
+  const x = Math.max(24, window.innerWidth * 0.5 - 260);
+  const selected = customization.selectedField === field;
+  const boxHeight = customizeRowBoxHeight();
+  const fontSize = boxHeight < 28 ? 12 : boxHeight < 34 ? 13 : 15;
+  const vol = customization.sfxVolume;
+  const pct = vol * 10;
+  const volLabel = pct === 0 ? "Muted" : `${pct}%`;
+
+  ctx.lineWidth = selected ? 3 : 1;
+  ctx.strokeRect(x, y, width, boxHeight);
+
+  ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  ctx.fillText(`${label}: ${volLabel}`, x + 12, y + Math.max(16, boxHeight * 0.68));
+
+  const sliderX = x + 150;
+  const sliderW = width - 180;
+  const sliderY = y + boxHeight * 0.5;
+  const sliderH = 6;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(sliderX, sliderY, sliderW, sliderH);
+  ctx.fillRect(sliderX, sliderY, sliderW * (vol / 10), sliderH);
+
+  drawSpeakerIcon(sliderX + sliderW + 16, sliderY + sliderH / 2, vol);
+}
+
+function drawSpeakerIcon(cx, cy, vol) {
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 6, cy - 3);
+  ctx.lineTo(cx - 2, cy - 3);
+  ctx.lineTo(cx + 3, cy - 7);
+  ctx.lineTo(cx + 3, cy + 7);
+  ctx.lineTo(cx - 2, cy + 3);
+  ctx.lineTo(cx - 6, cy + 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  if (vol > 0) {
+    ctx.beginPath();
+    ctx.arc(cx + 6, cy, 5, -Math.PI * 0.35, Math.PI * 0.35);
+    ctx.stroke();
+  }
+  if (vol >= 7) {
+    ctx.beginPath();
+    ctx.arc(cx + 6, cy, 10, -Math.PI * 0.3, Math.PI * 0.3);
+    ctx.stroke();
+  }
+  if (vol === 0) {
+    ctx.beginPath();
+    ctx.moveTo(cx + 3, cy - 8);
+    ctx.lineTo(cx + 14, cy + 8);
+    ctx.stroke();
+  }
+  ctx.restore();
 }

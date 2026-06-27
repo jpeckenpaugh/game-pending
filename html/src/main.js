@@ -5,12 +5,13 @@ import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
 import { startLevel, showGameOver, showLevelComplete, startLevelClearCollection } from "./level.js";
-import { updateBootsGlideRecharge, updateShieldRecharge, absorbOrTakeHit } from "./powerups.js";
+import { updateBootsGlideRecharge, updateShieldRecharge, updateHasteRecharge, absorbOrTakeHit } from "./powerups.js";
 import { updateDrone } from "./drone.js";
 import { updateEnemyPositions, defeatEnemy } from "./enemies.js";
 import { updateProjectiles } from "./projectiles.js";
 import { applyPlayerMovement, canStomp, jumpImpulse, playerDistanceTo } from "./player.js";
 import { addBurst, updateParticles } from "./effects.js";
+import { initAudio } from "./audio.js";
 
 function titleZoomForContent() {
   const contentBounds = worldContentBounds();
@@ -41,6 +42,7 @@ function update(dt) {
   player.invulnerableFor = Math.max(0, player.invulnerableFor - dt);
   updateShieldRecharge(dt);
   updateBootsGlideRecharge(dt);
+  updateHasteRecharge(dt);
   updateDrone(dt);
 
   applyPlayerMovement(dt, groundAt);
@@ -311,6 +313,16 @@ function loop(now) {
   tuneAutoFps(elapsed, frameInterval, performance.now() - workStart);
   requestAnimationFrame(loop);
 }
+
+function initOnGesture() {
+  initAudio();
+  window.removeEventListener("keydown", initOnGesture);
+  window.removeEventListener("mousedown", initOnGesture);
+  window.removeEventListener("touchstart", initOnGesture);
+}
+window.addEventListener("keydown", initOnGesture);
+window.addEventListener("mousedown", initOnGesture);
+window.addEventListener("touchstart", initOnGesture);
 
 window.addEventListener("resize", () => resizeCanvas(canvas, ctx));
 setupInput(canvas);

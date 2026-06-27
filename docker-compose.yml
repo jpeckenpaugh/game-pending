@@ -1,9 +1,17 @@
 services:
   game-pending:
-    image: nginx:alpine
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
     container_name: game-pending
     ports:
       - "8000:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./html:/usr/share/nginx/html:ro
+      - ./html:/var/www/html:ro
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/config/auth.json:/root/.local/share/opencode/auth.json:ro
+      - ./docker/config/opencode.json:/root/.config/opencode/opencode.json:ro
+      - .:/game-pending
+    working_dir: /game-pending
+    environment:
+      OPENCODE_SERVER_PASSWORD: dev-pw

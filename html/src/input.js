@@ -4,6 +4,7 @@ import { game, keys, states, touches } from "./state.js";
 import { beginNewGame, chooseLevelPowerUp, choosePowerChoice, grantAndRefreshPowerChoice, pauseGame, resumeGame, returnToTitle, showPowerChoice } from "./level.js";
 import { shoot } from "./projectiles.js";
 import { cancelCustomize, customizeActionAt, cycleCustomizeOption, handleCustomizeKey, openCustomize, saveCustomize, selectCustomizeField, titleButtonAt } from "./customize.js";
+import { playMenuSelect } from "./audio.js";
 
 export function setupInput(canvas) {
   window.addEventListener("keydown", (event) => {
@@ -14,7 +15,7 @@ export function setupInput(canvas) {
       return;
     }
 
-    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "x", "s", "w", "r"].includes(key)) {
+    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "x", "s", "w", "r", "z"].includes(key)) {
       event.preventDefault();
     }
 
@@ -31,6 +32,8 @@ export function setupInput(canvas) {
 
     // X is the dedicated jump/glide key so Up/W can remain aiming and climbing.
     if (key === "x" && !keys.has(key)) game.jumpRequested = true;
+    // Z is the dash key.
+    if (key === "z" && !keys.has(key) && game.state === states.PLAYING) game.dashRequested = true;
     if (key === "g" && !keys.has(key) && game.state === states.PLAYING) showPowerChoice(states.PLAYING);
     if (key === " ") shoot();
     if (key === "r" && game.state === states.PLAYING) beginNewGame();
@@ -95,10 +98,12 @@ function handleMenuAction(x, y) {
   if (game.state === states.CUSTOMIZE) {
     const action = customizeActionAt(x, y);
     if (action === "save") {
+      playMenuSelect();
       saveCustomize();
       return true;
     }
     if (action === "cancel") {
+      playMenuSelect();
       cancelCustomize();
       return true;
     }
@@ -123,6 +128,7 @@ function handleMenuAction(x, y) {
   if (game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) {
     const choiceIndex = powerChoiceAt(x, y);
     if (choiceIndex >= 0) {
+      playMenuSelect();
       return game.state === states.LEVEL_COMPLETE
         ? chooseLevelPowerUp(choiceIndex)
         : choosePowerChoice(choiceIndex);
@@ -145,6 +151,7 @@ function handleMenuAction(x, y) {
   if (!insideButton) return false;
 
   if (game.state === states.GAME_OVER) {
+    playMenuSelect();
     beginNewGame();
     return true;
   }
@@ -177,12 +184,14 @@ function handleMenuKey(key) {
   }
 
   if ((game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) && (key === "enter" || key === " ")) {
+    playMenuSelect();
     if (game.state === states.LEVEL_COMPLETE) chooseLevelPowerUp(game.powerChoiceSelection);
     else choosePowerChoice(game.powerChoiceSelection);
     return true;
   }
 
   if (game.state === states.POWER_CHOICE && key === "g") {
+    playMenuSelect();
     grantAndRefreshPowerChoice();
     return true;
   }
@@ -198,6 +207,7 @@ function handleMenuKey(key) {
       return true;
     }
     if (key === "1" || key === "2" || key === "3") {
+      playMenuSelect();
       if (game.state === states.LEVEL_COMPLETE) chooseLevelPowerUp(Number(key) - 1);
       else choosePowerChoice(Number(key) - 1);
       return true;
@@ -205,6 +215,7 @@ function handleMenuKey(key) {
   }
 
   if (game.state === states.GAME_OVER && (key === "enter" || key === " " || key === "r")) {
+    playMenuSelect();
     beginNewGame();
     return true;
   }
@@ -230,6 +241,7 @@ function powerChoiceAt(x, y) {
 
 function activateTitleSelection(selection) {
   game.titleSelection = selection;
+  playMenuSelect();
   if (selection === 0) {
     beginNewGame();
   } else {
@@ -240,6 +252,7 @@ function activateTitleSelection(selection) {
 
 function activatePauseSelection(selection) {
   game.pauseSelection = selection;
+  playMenuSelect();
   if (selection === 0) {
     resumeGame();
   } else if (selection === 1) {

@@ -43,6 +43,9 @@ export const player = {
   faceMood: "smile",
   faceMoodTimer: 0,
   faceMoodPriority: 0,
+  dashing: false,
+  dashTimer: 0,
+  dashDirection: 0,
 };
 
 export const camera = { x: 0, y: 0, zoom: 1 };
@@ -52,6 +55,7 @@ export const projectiles = [];
 export const enemies = [];
 export const drops = [];
 export const particles = [];
+export const mirrorQueue = [];
 
 export const drone = {
   active: false,
@@ -81,9 +85,13 @@ export const powerUps = {
   droneExtraRecharge: 0,
   bootsGlideCharge: 0,
   bootsGlideCooldown: 0,
+  hasteLevel: 0,
+  hasteRecharge: 0,
+  dashCharges: 0,
+  dashMaxCharges: 0,
 };
 
-export const powerUpPool = ["boots", "shield", "specs", "radar", "drone"];
+export const powerUpPool = ["boots", "shield", "specs", "radar", "drone", "haste"];
 
 export const states = {
   TITLE: "title",
@@ -148,6 +156,8 @@ export const customization = {
   savedOpponentIntelligence: "mixed",
   savedSpawningLocations: "standard",
   savedWorldGeneration: "seeded",
+  sfxVolume: 5,
+  savedSfxVolume: 5,
 };
 
 export const game = {
@@ -167,6 +177,7 @@ export const game = {
   autoFramePressure: 0,
   autoStableFor: 0,
   jumpRequested: false,
+  dashRequested: false,
   titleSelection: 0,
   pauseSelection: 0,
   levelCompleteSelection: 0,
@@ -189,6 +200,7 @@ export const game = {
   teleportZoomInStartY: 0,
   teleportZoomInStartZoom: 1,
   teleportMoved: false,
+  sfxVolume: 0.5,
 };
 
 const faceMoodPriorities = {

@@ -1,7 +1,8 @@
 // Owns player movement, collision with walkable surfaces/ladders, jump buffering,
 // stomp checks, teleport triggering, and Boots glide movement.
-import { game, keys, player, powerUps, setPlayerFaceMood, states, touches, world } from "./state.js";
+import { game, keys, mirrorQueue, player, powerUps, setPlayerFaceMood, states, touches, world } from "./state.js";
 import { groundAt, ladderAt, ladderEntryAt, ladderExitSurfaceAt, landingSurfaceAt, oppositeTeleport, teleportAt } from "./terrain.js";
+import { playJump } from "./audio.js";
 import { bootsGlideMax, primaryPowerLevel } from "./powerups.js";
 
 export function inputAxis() {
@@ -48,6 +49,8 @@ export function jump() {
   player.climbing = false;
   player.coyoteTimer = 0;
   player.jumpBuffer = 0;
+  playJump();
+  markMirrorAction("jump");
 }
 
 function midAirJump() {
@@ -66,6 +69,7 @@ export function jumpImpulse() {
 }
 
 export function canStomp(enemy) {
+  if (enemy.family === "mirror") return false;
   if (!powerUps.bootsLevel || player.vy <= 160) return false;
   const enemyTop = enemy.y - enemy.radius;
   const previousFeet = player.previousY;
@@ -110,7 +114,8 @@ export function applyPlayerMovement(dt, groundAt) {
   }
 
   if (axis !== 0) {
-    player.vx += axis * player.speed * (ducking ? 0.45 : 1) * dt;
+    const hasteMultiplier = powerUps.hasteLevel ? 1 + powerUps.hasteLevel * 0.12 : 1;
+    player.vx += axis * player.speed * hasteMultiplier * (ducking ? 0.45 : 1) * dt;
     player.facing = axis > 0 ? 1 : -1;
   } else {
     player.vx *= Math.pow(world.friction, dt * 60);
@@ -129,11 +134,30 @@ export function applyPlayerMovement(dt, groundAt) {
     player.coyoteTimer = Math.max(0, player.coyoteTimer - dt);
   }
 
+  if (game.dashRequested) {
+    game.dashRequested = false;
+    if (player.onGround && powerUps.dashCharges > 0 && !player.dashing) {
+      player.dashing = true;
+      player.dashTimer = 0.15;
+      player.dashDirection = player.facing;
+      player.invulnerableFor = Math.max(player.invulnerableFor, 0.15);
+      powerUps.dashCharges -= 1;
+    }
+  }
+
   if (!ducking && player.jumpBuffer > 0) {
     if (player.onGround || player.coyoteTimer > 0) {
       jump();
     } else if (!player.climbing && player.airJumpsRemaining > 0) {
       midAirJump();
+    }
+  }
+
+  if (player.dashing) {
+    player.dashTimer -= dt;
+    player.vx = player.dashDirection * 1340;
+    if (player.dashTimer <= 0) {
+      player.dashing = false;
     }
   }
 
@@ -178,6 +202,8 @@ export function applyPlayerMovement(dt, groundAt) {
       player.climbing = false;
     }
   }
+
+  recordMirrorSnapshot();
 }
 
 function canRocketGlide() {
@@ -231,4 +257,34 @@ function wrapPlayerIfNeeded() {
   player.vx = 0;
   player.climbing = false;
   game.wrapTimer = 0.36;
+}
+
+const MIRROR_RECORD_INTERVAL = 0.1;
+const MIRROR_QUEUE_MAX = 20;
+
+let lastMirrorRecordTime = 0;
+
+function recordMirrorSnapshot() {
+  const now = performance.now() / 1000;
+  if (now - lastMirrorRecordTime < MIRROR_RECORD_INTERVAL) return;
+  lastMirrorRecordTime = now;
+  mirrorQueue.push({
+    timestamp: now,
+    x: player.x,
+    y: player.y,
+    jumped: false,
+    shot: false,
+  });
+  while (mirrorQueue.length > MIRROR_QUEUE_MAX) mirrorQueue.shift();
+}
+
+function markMirrorAction(type) {
+  if (mirrorQueue.length === 0) return;
+  const last = mirrorQueue[mirrorQueue.length - 1];
+  if (type === "jump") last.jumped = true;
+  if (type === "shot") last.shot = true;
+}
+
+export function markMirrorShot() {
+  markMirrorAction("shot");
 }
