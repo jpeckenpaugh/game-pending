@@ -1,6 +1,6 @@
 // Owns player movement, collision with walkable surfaces/ladders, jump buffering,
 // stomp checks, teleport triggering, and Boots glide movement.
-import { game, keys, mirrorQueue, player, powerUps, setPlayerFaceMood, states, touches, world } from "./state.js";
+import { customization, game, keys, mirrorQueue, player, powerUps, setPlayerFaceMood, states, touches, world } from "./state.js";
 import { groundAt, ladderAt, ladderEntryAt, ladderExitSurfaceAt, landingSurfaceAt, oppositeTeleport, teleportAt } from "./terrain.js";
 import { playJump } from "./audio.js";
 import { bootsGlideMax, primaryPowerLevel } from "./powerups.js";
@@ -70,6 +70,7 @@ export function jumpImpulse() {
 
 export function canStomp(enemy) {
   if (enemy.family === "mirror") return false;
+  if (enemy.family === "ghost") return false;
   if (!powerUps.bootsLevel || player.vy <= 160) return false;
   const enemyTop = enemy.y - enemy.radius;
   const previousFeet = player.previousY;
@@ -166,6 +167,16 @@ export function applyPlayerMovement(dt, groundAt) {
   const gliding = canRocketGlide();
   const maxSpeed = gliding ? 430 : ducking ? 145 : 360;
   player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
+
+  if (world.mudZones.length > 0 && player.onGround) {
+    for (const zone of world.mudZones) {
+      if (player.x > zone.x && player.x < zone.x + zone.width
+        && player.y >= zone.y - 4 && player.y <= zone.y + zone.height + 4) {
+        player.vx *= 0.6;
+        break;
+      }
+    }
+  }
 
   player.previousY = player.y;
   if (player.climbing) {

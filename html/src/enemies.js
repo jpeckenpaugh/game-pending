@@ -1,9 +1,10 @@
 // Owns enemy spawning, movement AI, defeat bookkeeping, and kinetic suspension state.
 // Visual enemy drawing lives in enemyArt.js.
-import { customization, drops, enemies, game, mirrorQueue, player, projectiles, setPlayerFaceMood } from "./state.js";
+import { customization, drops, enemies, game, mirrorQueue, player, projectiles, setPlayerFaceMood, world } from "./state.js";
 import { addBurst, addShatter } from "./effects.js";
 import { playEnemyDefeat } from "./audio.js";
 import { groundAt, nearTeleportBuffer, surfaceYAt, walkableSurfaces } from "./terrain.js";
+import { ghostAdvicePool, ghostFrustratedPool } from "./data/dialogue.js";
 
 export function spawnEnemies() {
   const spawnPoints = enemySpawnPoints();
@@ -12,8 +13,8 @@ export function spawnEnemies() {
     const cycle = Math.floor(i / spawnPoints.length);
     const x = Math.max(70, Math.min(spawn.maxX, spawn.x + cycle * 52));
     const family = enemyFamilyForIndex(i);
-    const movement = family === "mirror" ? "mirror" : enemyMovementForIndex(i);
-    const radius = movement === "runner" ? 18 : movement === "mirror" ? 22 : 24;
+    const movement = family === "mirror" ? "mirror" : family === "ghost" ? "ghost" : enemyMovementForIndex(i);
+    const radius = movement === "runner" ? 18 : movement === "mirror" ? 22 : family === "ghost" ? 20 : 24;
     enemies.push({
       family,
       movement,
@@ -40,6 +41,16 @@ export function spawnEnemies() {
       flashTimer: 0,
       colorIndex: Math.floor(Math.random() * 1024),
       alive: true,
+      philosophizing: 0,
+      enraged: 0,
+      ghostPhase: family === "ghost" ? "advice" : "",
+      ghostBubbleCount: 0,
+      ghostAdviceCount: 0,
+      ghostFrustratedCount: 0,
+      ghostDialogueIndex: 0,
+      ghostDialoguePool: family === "ghost" ? shuffledPool(ghostAdvicePool) : [],
+      ghostSpeechBubble: null,
+      ghostBubbleTimer: 2 + Math.random() * 3,
     });
   }
 }
@@ -118,9 +129,19 @@ function shuffled(points) {
 
 function enemyFamilyForIndex(index) {
   if (index > 0 && index % 8 === 0) return "mirror";
+  if (index > 0 && index % 12 === 0) return "ghost";
   if (index > 0 && index % 6 === 0) return "square";
   if (index > 0 && index % 5 === 0) return "triangle";
   return "circle";
+}
+
+function shuffledPool(pool) {
+  const copy = [...pool];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 function enemyMovementForIndex(index) {
@@ -139,6 +160,23 @@ export function updateEnemyPositions(dt) {
   for (const enemy of enemies) {
     if (!enemy.alive) continue;
     if (updateSuspendedEnemy(enemy, dt)) continue;
+
+    // Decrement philosophizing / enraged timers
+    if (enemy.philosophizing > 0) {
+      enemy.philosophizing = Math.max(0, enemy.philosophizing - dt);
+      if (enemy.philosophizing <= 0) {
+        enemy.enraged = 2;
+      }
+      continue;
+    }
+    if (enemy.enraged > 0) {
+      enemy.enraged = Math.max(0, enemy.enraged - dt);
+    }
+
+    if (enemy.movement === "ghost") {
+      updateGhostEnemy(enemy, dt);
+      continue;
+    }
     if (enemy.movement === "mirror") {
       updateMirrorEnemy(enemy, dt);
       continue;
@@ -150,6 +188,9 @@ export function updateEnemyPositions(dt) {
       updateRandomEnemy(enemy, dt);
     } else {
       updateReactiveEnemy(enemy, dt, enemy.intelligence);
+    }
+    if (isInMudZone(enemy)) {
+      enemy.aiSpeed *= 0.6;
     }
     updateFacing(enemy, previousX);
   }
@@ -330,6 +371,84 @@ function updateMirrorEnemy(enemy, dt) {
   enemy.phase += dt * 2.5;
 }
 
+function updateGhostEnemy(enemy, dt) {
+  const hoverY = groundAt(enemy.x) - 160;
+  enemy.phase += dt * 2;
+
+  if (enemy.ghostPhase === "advice" || enemy.ghostPhase === "frustrated") {
+    const dx = player.x - enemy.x;
+    const dy = hoverY - enemy.y;
+    const followDir = Math.sign(dx) || 1;
+    const targetX = player.x - followDir * 120;
+    const moveDx = targetX - enemy.x;
+
+    if (Math.abs(moveDx) > 4) {
+      enemy.x += Math.sign(moveDx) * 80 * dt;
+    }
+    if (Math.abs(dy) > 4) {
+      enemy.y += Math.sign(dy) * 60 * dt;
+    }
+
+    enemy.facing = dx > 0 ? 1 : -1;
+
+    // Update speech bubble timer
+    enemy.ghostBubbleTimer -= dt;
+    if (enemy.ghostBubbleTimer <= 0) {
+      showGhostBubble(enemy);
+      const interval = enemy.ghostPhase === "advice" ? 5 : 3.5;
+      enemy.ghostBubbleTimer = interval + Math.random() * 1;
+    }
+
+    // Update existing speech bubble fade
+    if (enemy.ghostSpeechBubble) {
+      enemy.ghostSpeechBubble.timer -= dt;
+      if (enemy.ghostSpeechBubble.timer <= -0.5) {
+        enemy.ghostSpeechBubble = null;
+      }
+    }
+  } else if (enemy.ghostPhase === "attack") {
+    // Chase aggressively like a reactive circle enemy
+    const dx = player.x - enemy.x;
+    const direction = Math.sign(dx) || enemy.facing || 1;
+    const speed = 140;
+    const previousX = enemy.x;
+    enemy.x = clamp(enemy.x + direction * speed * dt, enemy.minX, enemy.maxX);
+    enemy.y = surfaceHeight(enemy) - enemy.radius;
+    updateFacing(enemy, previousX);
+
+    // Update existing speech bubble fade
+    if (enemy.ghostSpeechBubble) {
+      enemy.ghostSpeechBubble.timer -= dt;
+      if (enemy.ghostSpeechBubble.timer <= -0.5) {
+        enemy.ghostSpeechBubble = null;
+      }
+    }
+  }
+}
+
+function showGhostBubble(enemy) {
+  const pool = enemy.ghostPhase === "frustrated" ? ghostFrustratedPool : enemy.ghostDialoguePool;
+  const text = pool[enemy.ghostDialogueIndex % pool.length];
+  enemy.ghostDialogueIndex += 1;
+  enemy.ghostBubbleCount += 1;
+  enemy.ghostSpeechBubble = { text, timer: 3, angry: enemy.ghostPhase === "frustrated" };
+
+  if (enemy.ghostPhase === "advice") {
+    enemy.ghostAdviceCount += 1;
+    if (enemy.ghostAdviceCount >= 2) {
+      enemy.ghostPhase = "frustrated";
+      enemy.ghostDialoguePool = shuffledPool(ghostFrustratedPool);
+      enemy.ghostDialogueIndex = 0;
+    }
+  } else if (enemy.ghostPhase === "frustrated") {
+    enemy.ghostFrustratedCount += 1;
+    if (enemy.ghostFrustratedCount >= 2) {
+      enemy.ghostPhase = "attack";
+      enemy.ghostSpeechBubble = null;
+    }
+  }
+}
+
 function surfaceHeight(enemy) {
   if (enemy.surfaceId === "ground") return groundAt(enemy.x);
   const surface = walkableSurfaces().find((item) => item.id === enemy.surfaceId);
@@ -343,6 +462,18 @@ function clamp(value, min, max) {
 function updateFacing(enemy, previousX) {
   const dx = enemy.x - previousX;
   if (Math.abs(dx) > 0.01) enemy.facing = dx > 0 ? 1 : -1;
+}
+
+function isInMudZone(enemy) {
+  if (world.mudZones.length === 0) return false;
+  if (enemy.surfaceId !== "ground") return false;
+  for (const zone of world.mudZones) {
+    if (enemy.x > zone.x && enemy.x < zone.x + zone.width
+      && enemy.y >= zone.y - 4 && enemy.y <= zone.y + zone.height + 4) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function defeatEnemy(enemy) {

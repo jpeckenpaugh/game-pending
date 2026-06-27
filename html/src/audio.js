@@ -2,9 +2,15 @@ import { game } from "./state.js";
 
 let ctx = null;
 
+let initDone = false;
+
 function ac() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === "suspended") ctx.resume();
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (ctx.state === "suspended") {
+    ctx.resume();
+  }
   return ctx;
 }
 
@@ -38,9 +44,11 @@ function noise(duration, lowpass) {
 
 export function initAudio() {
   ac();
+  initDone = true;
 }
 
 export function playJump() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const g = gain(0.12 * vol);
@@ -55,6 +63,7 @@ export function playJump() {
 }
 
 export function playShoot() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const { source, dest } = noise(0.1);
@@ -66,6 +75,7 @@ export function playShoot() {
 }
 
 export function playHit() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const { source, dest } = noise(0.2, 200);
@@ -77,6 +87,7 @@ export function playHit() {
 }
 
 export function playEnemyDefeat() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const g = gain(0.1 * vol);
@@ -91,6 +102,7 @@ export function playEnemyDefeat() {
 }
 
 export function playLevelComplete() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const notes = [262, 330, 392];
@@ -109,6 +121,7 @@ export function playLevelComplete() {
 }
 
 export function playMenuSelect() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const g = gain(0.08 * vol);
@@ -123,6 +136,7 @@ export function playMenuSelect() {
 }
 
 export function playPowerUp() {
+  if (!initDone) return;
   const c = ac();
   const vol = game.sfxVolume ?? 0.5;
   const g = gain(0.1 * vol);

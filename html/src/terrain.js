@@ -44,6 +44,7 @@ export function buildTerrain() {
   world.ladders.length = 0;
   world.caves.length = 0;
   world.teleports.length = 0;
+  world.mudZones.length = 0;
   const pointCount = Math.ceil(world.width / world.terrainStep) + 2;
   const centerX = world.width / 2;
   const safeHalfWidth = 280;
@@ -115,6 +116,24 @@ function buildArenaLayout() {
     makeTeleport("left", margin),
     makeTeleport("right", world.width - margin)
   );
+
+  if (customization.colorTheme === "forest") {
+    buildMudZones(centerX, sideOffset, upperY, caveY, upperWidth, caveWidth, rng);
+  }
+}
+
+function buildMudZones(centerX, sideOffset, upperY, caveY, upperWidth, caveWidth, rng) {
+  world.mudZones.push(
+    { x: centerX - 60, y: world.baseGroundY - 12, width: 120, height: 24 },
+    { x: centerX - sideOffset + 80, y: world.baseGroundY - 8, width: 80, height: 20 },
+    { x: centerX + sideOffset - 120, y: world.baseGroundY - 8, width: 80, height: 20 },
+  );
+  const extraCount = Math.min(2, Math.floor(game.level / 3));
+  for (let i = 0; i < extraCount; i += 1) {
+    const mx = centerX + (rng() - 0.5) * (world.width * 0.5);
+    const mw = 60 + rng() * 60;
+    world.mudZones.push({ x: mx, y: world.baseGroundY - 10, width: mw, height: 22 });
+  }
 }
 
 function addExpansionPlatforms(centerX, sideOffset, upperY, caveY, upperWidth, caveWidth, rng) {

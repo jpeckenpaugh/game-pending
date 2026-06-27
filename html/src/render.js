@@ -95,6 +95,10 @@ function drawCaveBackgrounds(theme) {
 }
 
 function drawPlatforms(theme) {
+  if (customization.colorTheme === "forest") {
+    drawForestPlatforms(theme);
+    return;
+  }
   for (const platform of world.platforms) {
     const x = worldToScreenX(platform.x);
     const x2 = worldToScreenX(platform.x + platform.width);
@@ -123,6 +127,69 @@ function drawPlatforms(theme) {
   }
 }
 
+function drawForestPlatforms(theme) {
+  const trunkColor = themedColor(theme, "platform", "wood") || "#5c3d2e";
+  const trunkDetail = themedColor(theme, "platform", "woodDetail") || "#8b6914";
+  const canopyColor = themedColor(theme, "platform", "cement") || "#2d5016";
+  const inkColor = theme.ink;
+
+  for (const platform of world.platforms) {
+    const x = worldToScreenX(platform.x);
+    const x2 = worldToScreenX(platform.x + platform.width);
+    const y = worldToScreenY(platform.y);
+    if (x2 < -60 || x > window.innerWidth + 60) continue;
+
+    const trunkWidth = Math.min(z(44), Math.max(z(28), (x2 - x) * 0.35));
+    const trunkHeight = z(52);
+    const cx = (x + x2) / 2;
+
+    if (theme.colored) {
+      ctx.fillStyle = trunkColor;
+      ctx.beginPath();
+      const rx = trunkWidth / 2;
+      const ry = trunkHeight / 2;
+      const ty = y;
+      ctx.moveTo(cx - rx + z(4), ty);
+      ctx.lineTo(cx + rx - z(4), ty);
+      ctx.quadraticCurveTo(cx + rx, ty, cx + rx, ty + z(4));
+      ctx.lineTo(cx + rx, ty + trunkHeight - z(4));
+      ctx.quadraticCurveTo(cx + rx, ty + trunkHeight, cx + rx - z(4), ty + trunkHeight);
+      ctx.lineTo(cx - rx + z(4), ty + trunkHeight);
+      ctx.quadraticCurveTo(cx - rx, ty + trunkHeight, cx - rx, ty + trunkHeight - z(4));
+      ctx.lineTo(cx - rx, ty + z(4));
+      ctx.quadraticCurveTo(cx - rx, ty, cx - rx + z(4), ty);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = trunkDetail;
+      ctx.lineWidth = strokeWidth(1.5);
+      const stubCount = Math.max(1, Math.floor((x2 - x) / z(50)));
+      for (let i = 0; i < stubCount; i++) {
+        const t = (i + 0.5) / stubCount;
+        const sx = x + (x2 - x) * t;
+        const sy = y + trunkHeight * (0.2 + t * 0.4);
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        const dir = i % 2 === 0 ? 1 : -1;
+        ctx.lineTo(sx + dir * z(14), sy - z(6));
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = canopyColor;
+      ctx.beginPath();
+      ctx.ellipse(cx, y - z(10), trunkWidth * 0.7, z(14), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = inkColor;
+      ctx.lineWidth = strokeWidth(1.5);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = inkColor;
+    ctx.lineWidth = strokeWidth(2);
+    line(x, y, x2, y);
+  }
+}
+
 function platformMaterial(platform, theme) {
   if (!theme.colored) return { fill: theme.ink, detail: theme.ink };
   const cement = platform.id.includes("cave");
@@ -137,6 +204,11 @@ function drawLadders(theme) {
     const y = worldToScreenY(ladder.y);
     const bottom = worldToScreenY(ladder.y + ladder.height);
     if (bottom < -60 || y > window.innerHeight + 60) continue;
+
+    if (customization.colorTheme === "forest") {
+      drawVineLadder(x, y, bottom, theme);
+      continue;
+    }
 
     if (theme.colored) {
       ctx.lineWidth = strokeWidth(5);
@@ -156,6 +228,66 @@ function drawLadders(theme) {
     for (let rungY = y + z(16); rungY < bottom; rungY += z(28)) {
       line(x - z(16), rungY, x + z(16), rungY);
     }
+  }
+}
+
+function drawVineLadder(x, y, bottom, theme) {
+  const vineColor = themedColor(theme, "ladder", "rail") || "#228b22";
+  const leafColor = themedColor(theme, "drone", "accent") || "#6b8e23";
+  const inkColor = theme.ink;
+  const totalHeight = bottom - y;
+  if (totalHeight <= 0) return;
+
+  ctx.lineWidth = strokeWidth(3);
+  ctx.strokeStyle = vineColor;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  const segments = Math.max(4, Math.ceil(totalHeight / z(40)));
+  for (let i = 1; i <= segments; i++) {
+    const t = i / segments;
+    const segY = y + totalHeight * t;
+    const wobble = Math.sin(t * Math.PI * 2.5) * z(8);
+    ctx.bezierCurveTo(
+      x + wobble * 0.6, y + totalHeight * (t - 0.5 / segments),
+      x - wobble * 0.6, segY - totalHeight * 0.05,
+      x + wobble, segY
+    );
+  }
+  ctx.stroke();
+
+  ctx.lineWidth = strokeWidth(1.5);
+  ctx.strokeStyle = inkColor;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  for (let i = 1; i <= segments; i++) {
+    const t = i / segments;
+    const segY = y + totalHeight * t;
+    const wobble = Math.sin(t * Math.PI * 2.5) * z(8);
+    ctx.bezierCurveTo(
+      x + wobble * 0.6, y + totalHeight * (t - 0.5 / segments),
+      x - wobble * 0.6, segY - totalHeight * 0.05,
+      x + wobble, segY
+    );
+  }
+  ctx.stroke();
+
+  const leafSpacing = z(22);
+  const leafCount = Math.floor(totalHeight / leafSpacing);
+  for (let i = 0; i <= leafCount; i++) {
+    const ly = y + i * leafSpacing;
+    const lt = ly / bottom;
+    const wobble = Math.sin(lt * Math.PI * 2.5) * z(8);
+    const lx = x + wobble;
+    const side = i % 2 === 0 ? 1 : -1;
+    ctx.fillStyle = leafColor;
+    ctx.beginPath();
+    ctx.ellipse(lx + side * z(5), ly, z(3.5), z(2), side * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = strokeWidth(1);
+    ctx.strokeStyle = inkColor;
+    ctx.beginPath();
+    ctx.ellipse(lx + side * z(5), ly, z(3.5), z(2), side * 0.4, 0, Math.PI * 2);
+    ctx.stroke();
   }
 }
 
@@ -226,12 +358,46 @@ function drawProjectile(projectile, theme) {
     const size = Math.max(3, z(7));
     if (fill) ctx.fillStyle = fill;
     ctx.fillRect(x - size / 2, y - size / 2, size, size);
+  } else if (projectile.weaponType === "question") {
+    drawQuestionProjectile(x, y);
   } else {
     const fill = themedColor(theme, "attack", "magic");
     if (fill) ctx.fillStyle = fill;
     ctx.font = `${z(28)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
     ctx.fillText("*", x - z(8), y + z(8));
   }
+  ctx.restore();
+}
+
+function drawQuestionProjectile(x, y) {
+  const time = performance.now() / 1000;
+  const rot = Math.sin(time * 6) * 0.26;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+
+  // Glow
+  const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, z(16));
+  glow.addColorStop(0, "rgba(255, 220, 60, 0.5)");
+  glow.addColorStop(1, "rgba(255, 220, 60, 0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, z(16), 0, Math.PI * 2);
+  ctx.fill();
+
+  // Character
+  ctx.fillStyle = "#ffd700";
+  ctx.strokeStyle = "#b8860b";
+  ctx.lineWidth = strokeWidth(1.5);
+  ctx.font = `bold ${z(26)}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeText("?", 0, 0);
+  ctx.fillText("?", 0, 0);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+
   ctx.restore();
 }
 
@@ -358,6 +524,55 @@ function drawCollectionNotice() {
   ctx.textAlign = "left";
 }
 
+function drawMudZones(theme) {
+  const mudColor = themedColor(theme, "ground", "grass") || "#3d2b1f";
+  const mudHighlight = themedColor(theme, "ground", "detail") || "#5c4033";
+  const inkColor = theme.ink;
+  for (const zone of world.mudZones) {
+    const x = worldToScreenX(zone.x);
+    const y = worldToScreenY(zone.y);
+    const w = z(zone.width);
+    const h = z(zone.height);
+    if (x + w < -40 || x > window.innerWidth + 40) continue;
+    ctx.fillStyle = mudColor;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = inkColor;
+    ctx.globalAlpha = 0.12;
+    for (let i = 0; i < 6; i++) {
+      const dx = x + w * (0.15 + (i * 0.15));
+      const dy = y + h * (0.25 + (i % 3) * 0.25);
+      ctx.fillRect(dx, dy, z(3), z(3));
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = mudHighlight;
+    ctx.fillRect(x, y + h - z(2), w, z(2));
+  }
+}
+
+function drawLeafParticle(particle, theme) {
+  const x = worldToScreenX(particle.x);
+  const y = worldToScreenY(particle.y);
+  if (x < -30 || x > window.innerWidth + 30) return;
+  const leafColor = themedColor(theme, "drone", "accent") || "#6b8e23";
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(particle.rotation || 0);
+  ctx.globalAlpha = Math.min(1, (particle.life || 1) * 2);
+  ctx.fillStyle = leafColor;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, z(3), z(5), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = theme.ink;
+  ctx.lineWidth = strokeWidth(1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(0, -z(4));
+  ctx.lineTo(0, z(4));
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 export function draw() {
   const theme = activeColorTheme();
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -369,6 +584,7 @@ export function draw() {
   ctx.lineWidth = 3;
 
   drawTerrain(theme);
+  if (customization.colorTheme === "forest") drawMudZones(theme);
   ctx.strokeStyle = theme.ink;
   ctx.fillStyle = theme.ink;
   for (const drop of drops) drawDrop(drop);
@@ -377,6 +593,10 @@ export function draw() {
   drawDrone(theme);
 
   for (const particle of particles) {
+    if (particle.leaf) {
+      drawLeafParticle(particle, theme);
+      continue;
+    }
     const x = worldToScreenX(particle.x);
     const y = worldToScreenY(particle.y);
     line(x - z(3), y, x + z(3), y);

@@ -15,6 +15,7 @@ export const world = {
   ladders: [],
   caves: [],
   teleports: [],
+  mudZones: [],
   spawnX: 80,
   spawnY: 0,
 };

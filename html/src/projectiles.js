@@ -8,14 +8,16 @@ import { landingSurfaceAt } from "./terrain.js";
 import { playShoot } from "./audio.js";
 
 export function shoot() {
-  if (game.state !== states.PLAYING || player.shootCooldown > 0 || player.ammo <= 0) return;
+  if (game.state !== states.PLAYING || player.shootCooldown > 0) return;
+  const weaponType = customization.weaponType;
+  const ammoCost = weaponAmmoCost(weaponType);
+  if (player.ammo < ammoCost) return;
 
   const ducking = isDucking();
   const shotY = player.y - (ducking ? 28 : 48);
-  const weaponType = customization.weaponType;
   const velocity = shotVelocity(shotY, weaponType);
-  player.ammo -= 1;
-  player.shootCooldown = 0.18;
+  player.ammo -= ammoCost;
+  player.shootCooldown = weaponCooldown(weaponType);
   setPlayerFaceMood("angry", 0.55, 2);
   projectiles.push({
     x: player.x + player.facing * 24,
@@ -39,7 +41,7 @@ export function shoot() {
 }
 
 function shotVelocity(shotY, weaponType) {
-  const speed = weaponType === "gun" ? 3040 : 760;
+  const speed = weaponType === "gun" ? 3040 : weaponType === "question" ? 600 : 760;
   if (weaponType === "club") return clubVelocity();
 
   const direction = weaponAimDirection();
@@ -116,13 +118,25 @@ function groundedDownAimSuppressed() {
 
 function projectileLife(weaponType) {
   if (weaponType === "gun") return null;
+  if (weaponType === "question") return 1.2;
   return weaponType === "club" ? 3 : 1.7;
 }
 
 function projectileRadius(weaponType) {
   if (weaponType === "club") return 15;
   if (weaponType === "gun") return 4;
+  if (weaponType === "question") return 10;
   return 7;
+}
+
+function weaponAmmoCost(weaponType) {
+  if (weaponType === "question") return 2;
+  return 1;
+}
+
+function weaponCooldown(weaponType) {
+  if (weaponType === "question") return 0.6;
+  return 0.18;
 }
 
 export function updateProjectiles(dt) {
@@ -156,6 +170,13 @@ export function updateProjectiles(dt) {
         game.message = "Blocked!";
         game.messageTimer = 0.8;
         if (projectile.weaponType !== "club") projectiles.splice(i, 1);
+        break;
+      }
+      if (projectile.weaponType === "question") {
+        enemy.philosophizing = 0.8;
+        enemy.enraged = 0;
+        enemy.flashTimer = 0.3;
+        projectiles.splice(i, 1);
         break;
       }
       defeatEnemy(enemy);

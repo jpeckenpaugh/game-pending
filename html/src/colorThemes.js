@@ -2,7 +2,7 @@
 // Classic preserves the original black-and-white line-art presentation.
 import { customization } from "./state.js";
 
-export const colorThemeTypes = ["classic", "natural", "sunset", "arcade", "pastel"];
+export const colorThemeTypes = ["classic", "natural", "sunset", "arcade", "pastel", "forest"];
 
 export const colorThemes = {
   classic: {
@@ -123,6 +123,33 @@ export const colorThemes = {
     drone: { body: "#d8e4ea", accent: "#94c7ee", rotor: "#7d8b92", beam: "#ffd28a" },
     enemies: ["#ff9aae", "#ffd28a", "#9bd9a0", "#94c7ee", "#c7a4e8", "#ffa68f"],
   },
+  forest: {
+    id: "forest",
+    ink: "#1a1a0a",
+    colored: true,
+    sky: { top: "#1a3a1a", bottom: "#2d5016" },
+    ground: { grass: "#3d2b1f", detail: "#5c4033" },
+    underground: { fill: "#2a1a10", accent: "rgba(61, 43, 31, 0.22)" },
+    platform: {
+      wood: "#2d5016",
+      woodDetail: "#4a7c28",
+      cement: "#5c3d2e",
+      cementDetail: "#8b6914",
+    },
+    ladder: { rail: "#228b22", rung: "#228b22" },
+    gear: {
+      boots: "#3d2b1f",
+      thrust: "#6b8e23",
+      shield: "#55a9c9",
+      vest: "#4a7c28",
+      specs: "#2d8bb8",
+      radar: "#9acd32",
+    },
+    weapon: { gun: "#5c3d2e", club: "#3d2b1f", wand: "#6b8e23", accent: "#9acd32" },
+    attack: { bullet: "#3d2b1f", magic: "#6b8e23", missile: "#ff4d6d" },
+    drone: { body: "#4a7c28", accent: "#6b8e23", rotor: "#3d2b1f", beam: "#9acd32" },
+    enemies: ["#6b8e23", "#8b6914", "#5c4033", "#9acd32", "#3d2b1f", "#2d5016"],
+  },
 };
 
 export function activeColorTheme() {
@@ -134,6 +161,7 @@ export function colorThemeLabel(colorTheme) {
   if (colorTheme === "sunset") return "Sunset";
   if (colorTheme === "arcade") return "Arcade";
   if (colorTheme === "pastel") return "Pastel";
+  if (colorTheme === "forest") return "Forest";
   return "Classic";
 }
 

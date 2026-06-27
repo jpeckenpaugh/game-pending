@@ -306,9 +306,11 @@ function opponentsLabel() {
 }
 
 function weaponTypeLabel(weaponType) {
+  if (weaponType === "gun") return "Gun";
   if (weaponType === "club") return "Club";
   if (weaponType === "wand") return "Wand";
-  return "Gun";
+  if (weaponType === "question") return "Question";
+  return weaponType;
 }
 
 function worldGenerationLabel(worldGeneration) {
