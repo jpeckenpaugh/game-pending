@@ -4,7 +4,7 @@ A small HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules.
 
 ## Latest browser demo
 
-The main-branch Pages deployment runs the headless browser smoke test before publishing the site. A successful run publishes the latest WebM demo and all six smoke-test screenshots; a failed run does not deploy and retains its test artifacts in GitHub Actions for 14 days.
+The main-branch Pages deployment runs the headless browser smoke test before publishing the site. A successful run publishes an approximately 30-second WebM app showcase—from the title screen through Customize and into active gameplay—plus all six smoke-test screenshots. A failed run does not deploy and retains its test artifacts in GitHub Actions for 14 days.
 
 [![Open the latest gameplay demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/03-game-start.png)](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
 
@@ -28,7 +28,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 
 ## Browser smoke test
 
-Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: change the color theme, start a seeded game, move/jump/fire, then pause and resume. The command exits nonzero if an assertion or browser error is detected.
+Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: change the color theme, start a seeded game, move/jump/fire, then pause and resume. In parallel with those assertions, the recording showcases the full flow from initial title load through Customize and active gameplay, targeting 30 seconds total; `ffprobe` validates the finalized video is 29–32 seconds. The command exits nonzero if an assertion, browser error, or video-duration check fails.
 
 Screenshots (`01-title.png` through `06-resumed.png`), `demo.webm`, `result.json`, and a failure screenshot when available are written to the ignored `test-artifacts/` directory, including on failed runs. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`.
 
