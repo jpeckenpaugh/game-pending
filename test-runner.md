@@ -8,16 +8,24 @@ This is a proof of concept, not a general-purpose test framework or a full QA su
 
 ## POC outcome
 
-From the repository, one documented command should:
+From the repository, documented commands should support a fast smoke mode and an explicit showcase mode:
 
 1. Build or start an isolated test-runner container using a dedicated test entry point (not the existing development Compose service).
 2. Serve the current `html/` game over HTTP from the test-runner container.
 3. Launch a pinned Playwright/Chromium browser in headless mode.
 4. Run one deterministic, keyboard-only smoke scenario.
-5. Save screenshots, an approximately 30-second WebM app showcase, and browser diagnostics to a host-accessible artifact directory.
+5. Save screenshots and browser diagnostics to a host-accessible artifact directory in fast mode; optionally record an approximately 30-second WebM and promotional still gallery in showcase mode.
 6. Exit nonzero on a failed assertion or browser/runtime error, and zero on success.
 
 The runner must work on ordinary developer/CI machines and must not depend on a physical display, VNC, GPU, or credentials. Keep the existing development Docker service focused on its current purpose; prefer a separate test-runner image/service.
+
+## Commands and triggers
+
+- `./test-runner/run.sh` (default) runs only the fast keyboard smoke and assertion flow. Locally it takes about 8 seconds; it leaves any existing `demo.webm` and `gallery/` artifacts untouched.
+- `./test-runner/run.sh --showcase` runs the same smoke flow, then records the 29–32 second WebM and captures the seven promotional stills after closing the video context. The complete local command takes about 45 seconds.
+- Set `TEST_ARTIFACTS_DIR` to use a separate host artifact directory.
+- Pushes to `main` run fast mode and publish the game only after it passes, preserving the currently published `demos/latest/` media. Manual workflow dispatch defaults to fast mode; enable its `showcase` input to generate and publish fresh video/gallery media after successful smoke validation.
+- Any test failure uploads available `test-artifacts/` to Actions (14-day retention) and blocks deployment.
 
 ## Proposed first workflow
 
@@ -50,7 +58,9 @@ Avoid asserting that a particular shot hits an enemy or that the player survives
 - Mount an output directory at `test-artifacts/` so screenshots and reports survive container exit. Add it to `.gitignore` so generated artifacts are not committed by default.
 - Preserve failure evidence: screenshots, console errors, page errors, test log, and a concise machine-readable result (JSON or JUnit XML if readily supported).
 - Record the browser context with Playwright's native `recordVideo` support starting with the first page load. Include the title, Customize/options, game start, and active gameplay in a total video runtime target of 29–32 seconds. Close the context to finalize `demo.webm`, measure its duration with `ffprobe`, and retain the video where available on failure.
-- After finalizing the demo context, capture title, options, Choose Power, and Original/Emoji/Farm/Robot promotional stills in separate non-recording browser contexts. Use the existing keyboard Customize flow with distinct deterministic mode configurations and starting loadouts; save these separately under `test-artifacts/gallery/`.
+- Only in showcase mode, after finalizing the demo context, capture title, options, Choose Power, and Original/Emoji/Farm/Robot promotional stills in separate non-recording browser contexts. Use the existing keyboard Customize flow with distinct deterministic mode configurations and starting loadouts; save these separately under `test-artifacts/gallery/`.
+- `./test-runner/run.sh` is fast smoke mode: retain behavioral assertions and diagnostic screenshots, but do not record video, run the long active-gameplay loop, or generate gallery stills. Leave any older showcase artifacts untouched.
+- `./test-runner/run.sh --showcase` runs the same smoke assertions plus the 29–32 second recording and promotional gallery capture.
 - Add a timeout and clean shutdown for the server/browser so failed tests do not leave processes running.
 
 ## Assertions and observability
@@ -62,7 +72,7 @@ Initially, assert what can be observed robustly:
 - Starting a game displays the Level/Ammo/Enemies HUD.
 - A Wand shot with directional keys released reduces ammo while Specs is active.
 - Customize saved the requested template, theme, weapon, and starting loadout; the runtime G sequence added a meaningful power-up grant.
-- The seven promotional stills use the requested mode/template/theme pairings and show distinct screens/scenes; treat them as visual showcase assets, not pixel-comparison tests.
+- In showcase mode, the seven promotional stills use the requested mode/template/theme pairings and show distinct screens/scenes; treat them as visual showcase assets, not pixel-comparison tests.
 - Pause/resume transitions produce the expected visible state.
 - No uncaught page errors occur.
 
@@ -81,9 +91,10 @@ Screenshot comparison should initially be for human/agent inspection, not strict
 
 ## Acceptance criteria
 
-- A new developer/agent can follow one documented command without a pre-existing browser or desktop session; the test container is separate from the existing development service.
+- A new developer/agent can follow either documented command without a pre-existing browser or desktop session; the test container is separate from the existing development service.
 - The run uses the current working tree's game files and a real browser engine with pinned Playwright/Chromium versions.
-- A successful run emits all eight named screenshots and a clear success result; the video begins on the title and runs 29–32 seconds.
+- Fast mode emits all eight named smoke screenshots and a clear success result, without changing video/gallery artifact timestamps.
+- Showcase mode emits all eight smoke screenshots, seven gallery stills, and a clear success result; its video begins on the title and runs 29–32 seconds.
 - A deliberately broken assertion or page error causes a nonzero exit and retains failure artifacts.
 - The runner shuts down cleanly and does not modify game source or leave generated files tracked.
 - The test command and artifact locations are documented in the README or a dedicated test-runner section.
@@ -100,8 +111,9 @@ These decisions are approved for the POC:
 - Explicitly navigate to and activate Continue to resume from pause.
 - Run the smoke test in the existing Pages workflow before publishing; do not create a separate Pages deployment workflow.
 - Use screenshots for visual inspection. Add a minimal read-only, test-mode-gated state hook only if robust behavioral assertions otherwise cannot be made.
-- In the existing Pages workflow, run the smoke test before Pages upload/deployment; on failure retain test artifacts in Actions for 14 days and do not publish.
-- On success, publish the eight diagnostic screenshots and seven promotional stills plus the approximately 30-second WebM showcase alongside the game, without committing generated media. Serve the stills through the responsive `demos/gallery.html` page.
+- On every push to `main`, the existing Pages workflow runs fast smoke before deployment and preserves the currently published `demos/latest/` media tree; tolerate missing assets on a first deployment, but fail safely on download/network errors rather than silently removing existing media.
+- Only a manual workflow dispatch with the showcase input enabled generates and publishes new media. On any test failure retain Actions artifacts for 14 days and do not deploy.
+- Showcase deployments publish the eight diagnostic screenshots, seven promotional stills, and approximately 30-second WebM alongside the game, without committing generated media. Serve the stills through the responsive `demos/gallery.html` page.
 - Keep WebM as the recording format; use no external recorder or conversion unless an observed playback problem requires revisiting the decision.
 
 CI execution is part of this approved follow-up: the existing Pages deployment is gated on the headless smoke test, while its artifacts are uploaded even after failure.

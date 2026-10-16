@@ -6,6 +6,12 @@ on:
 
   # Allows running this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      showcase:
+        description: Generate and publish the video and promotional gallery
+        type: boolean
+        required: false
+        default: false
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -29,8 +35,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run browser smoke test and record demo
-        run: ./test-runner/run.sh
+      - name: Run browser smoke test
+        env:
+          SHOWCASE: ${{ inputs.showcase }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$SHOWCASE" = "true" ]; then
+            ./test-runner/run.sh --showcase
+          else
+            ./test-runner/run.sh
+          fi
 
       - name: Upload smoke-test artifacts
         if: always()
@@ -44,13 +57,19 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Assemble Pages site with latest demo media
+      - name: Assemble Pages site and preserve or refresh demo media
+        env:
+          SHOWCASE: ${{ inputs.showcase }}
         run: |
           mkdir -p _site/demos/latest
           cp -R html/. _site/
-          cp test-artifacts/demo.webm _site/demos/latest/demo.webm
-          cp test-artifacts/0[1-8]-*.png _site/demos/latest/
-          cp -R test-artifacts/gallery _site/demos/latest/gallery
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$SHOWCASE" = "true" ]; then
+            cp test-artifacts/demo.webm _site/demos/latest/demo.webm
+            cp test-artifacts/0[1-8]-*.png _site/demos/latest/
+            cp -R test-artifacts/gallery _site/demos/latest/gallery
+          else
+            python3 .github/scripts/preserve-pages-media.py
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

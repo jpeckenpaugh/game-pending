@@ -8,13 +8,14 @@ const root = process.env.GAME_ROOT || '/game';
 const output = '/artifacts';
 const port = 4173;
 const targetVideoDurationMs = 30_000;
+const showcaseMode = process.env.GAME_PENDING_SHOWCASE === '1';
 const errors = [];
 let browser;
 let context;
 let video;
 let server;
 let videoStartedAt;
-const result = { status: 'failed', startedAt: new Date().toISOString(), browser: null, steps: [], errors };
+const result = { status: 'failed', mode: showcaseMode ? 'showcase' : 'fast-smoke', startedAt: new Date().toISOString(), browser: null, steps: [], errors };
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const record = (step) => result.steps.push({ step, status: 'passed' });
 const snap = (page, name) => page.screenshot({ path: path.join(output, name), fullPage: true });
@@ -36,11 +37,11 @@ try {
   result.browser = { playwright: '1.55.0', chromium: browser.version(), viewport: { width: 1024, height: 768 } };
   context = await browser.newContext({
     viewport: result.browser.viewport,
-    recordVideo: { dir: output, size: result.browser.viewport },
+    ...(showcaseMode ? { recordVideo: { dir: output, size: result.browser.viewport } } : {}),
   });
-  videoStartedAt = process.hrtime.bigint();
+  if (showcaseMode) videoStartedAt = process.hrtime.bigint();
   const page = await context.newPage();
-  video = page.video();
+  video = showcaseMode ? page.video() : null;
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
   page.on('console', message => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
   await page.goto(`http://127.0.0.1:${port}/?test=1`, { waitUntil: 'networkidle' });
@@ -139,71 +140,75 @@ try {
   await page.keyboard.press('Enter'); await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'playing');
   await snap(page, '06-resumed.png'); record('pause and continue');
 
-  // Continue mostly rightward, releasing movement keys before intermittent
-  // Wand shots so Specs auto-aim remains active. Never restart a Game Over.
-  const activeDeadlineMs = targetVideoDurationMs - 1_500;
-  let rightHeld = false;
-  let showcaseShots = 0;
-  let nextShotAtMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6 + 1_200;
-  let nextJumpAtMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
-  const teleportPhases = new Set();
-  let endState = 'playing';
-  while (Number(process.hrtime.bigint() - videoStartedAt) / 1e6 < activeDeadlineMs) {
-    const observed = await page.evaluate(() => window.__GAME_TEST__());
-    if (observed.teleportPhase !== 'idle') teleportPhases.add(observed.teleportPhase);
-    if (observed.state === 'gameOver') {
-      endState = 'gameOver';
-      break;
-    }
-    if (observed.state === 'levelCollecting') {
-      await page.waitForTimeout(180);
-      continue;
-    }
-    if (observed.state === 'levelComplete' || observed.state === 'powerChoice') {
-      await page.keyboard.press('Enter');
-      await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'playing');
-      continue;
-    }
-
-    const elapsedMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
-    if (elapsedMs >= nextShotAtMs) {
-      if (rightHeld) {
-        await page.keyboard.up('ArrowRight');
-        rightHeld = false;
-      }
-      await page.waitForTimeout(120);
-      const shotsBefore = await page.evaluate(() => window.__GAME_TEST__().ammo);
-      await page.keyboard.press('Space');
-      await page.waitForTimeout(200);
-      const shotState = await page.evaluate(() => window.__GAME_TEST__());
-      if (shotState.ammo < shotsBefore) showcaseShots += 1;
-      nextShotAtMs = elapsedMs + 4_000;
-      if (elapsedMs < nextJumpAtMs) nextJumpAtMs = elapsedMs;
-    } else if (!rightHeld) {
-      await page.keyboard.down('ArrowRight');
-      rightHeld = true;
-    }
-
-    if (elapsedMs >= nextJumpAtMs && observed.teleportPhase === 'idle' && observed.playerX < observed.worldWidth - 550) {
-      await page.keyboard.press('x');
-      nextJumpAtMs = elapsedMs + 2_200;
-    }
-    await page.waitForTimeout(180);
-  }
-  if (rightHeld) await page.keyboard.up('ArrowRight');
-  if (endState === 'gameOver') {
+  if (showcaseMode) {
+    // Continue mostly rightward, releasing movement keys before intermittent
+    // Wand shots so Specs auto-aim remains active. Never restart a Game Over.
+    const activeDeadlineMs = targetVideoDurationMs - 1_500;
+    let rightHeld = false;
+    let showcaseShots = 0;
+    let nextShotAtMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6 + 1_200;
+    let nextJumpAtMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
+    const teleportPhases = new Set();
+    let endState = 'playing';
     while (Number(process.hrtime.bigint() - videoStartedAt) / 1e6 < activeDeadlineMs) {
-      await page.waitForTimeout(200);
+      const observed = await page.evaluate(() => window.__GAME_TEST__());
+      if (observed.teleportPhase !== 'idle') teleportPhases.add(observed.teleportPhase);
+      if (observed.state === 'gameOver') {
+        endState = 'gameOver';
+        break;
+      }
+      if (observed.state === 'levelCollecting') {
+        await page.waitForTimeout(180);
+        continue;
+      }
+      if (observed.state === 'levelComplete' || observed.state === 'powerChoice') {
+        await page.keyboard.press('Enter');
+        await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'playing');
+        continue;
+      }
+
+      const elapsedMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
+      if (elapsedMs >= nextShotAtMs) {
+        if (rightHeld) {
+          await page.keyboard.up('ArrowRight');
+          rightHeld = false;
+        }
+        await page.waitForTimeout(120);
+        const shotsBefore = await page.evaluate(() => window.__GAME_TEST__().ammo);
+        await page.keyboard.press('Space');
+        await page.waitForTimeout(200);
+        const shotState = await page.evaluate(() => window.__GAME_TEST__());
+        if (shotState.ammo < shotsBefore) showcaseShots += 1;
+        nextShotAtMs = elapsedMs + 4_000;
+        if (elapsedMs < nextJumpAtMs) nextJumpAtMs = elapsedMs;
+      } else if (!rightHeld) {
+        await page.keyboard.down('ArrowRight');
+        rightHeld = true;
+      }
+
+      if (elapsedMs >= nextJumpAtMs && observed.teleportPhase === 'idle' && observed.playerX < observed.worldWidth - 550) {
+        await page.keyboard.press('x');
+        nextJumpAtMs = elapsedMs + 2_200;
+      }
+      await page.waitForTimeout(180);
     }
+    if (rightHeld) await page.keyboard.up('ArrowRight');
+    if (endState === 'gameOver') {
+      while (Number(process.hrtime.bigint() - videoStartedAt) / 1e6 < activeDeadlineMs) {
+        await page.waitForTimeout(200);
+      }
+    } else {
+      endState = (await page.evaluate(() => window.__GAME_TEST__())).state;
+    }
+    const elapsedBeforeCloseMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
+    const finalGameplayState = await page.evaluate(() => window.__GAME_TEST__());
+    result.steps.push({ step: 'active gameplay showcase', status: 'passed', elapsedMs: Math.round(elapsedBeforeCloseMs), stateAtEnd: endState, shots: showcaseShots, playerX: finalGameplayState.playerX, teleportPhases: [...teleportPhases] });
+    result.showcase = { stateAtEnd: endState, shots: showcaseShots, playerX: finalGameplayState.playerX, teleportPhases: [...teleportPhases] };
+    assert(showcaseShots > 0 || endState === 'gameOver', 'Showcase did not fire any shots before ending');
+    result.video = { targetDurationSeconds: targetVideoDurationMs / 1000 };
   } else {
-    endState = (await page.evaluate(() => window.__GAME_TEST__())).state;
+    result.showcase = { recorded: false, galleryCaptured: false };
   }
-  const elapsedBeforeCloseMs = Number(process.hrtime.bigint() - videoStartedAt) / 1e6;
-  const finalGameplayState = await page.evaluate(() => window.__GAME_TEST__());
-  result.steps.push({ step: 'active gameplay showcase', status: 'passed', elapsedMs: Math.round(elapsedBeforeCloseMs), stateAtEnd: endState, shots: showcaseShots, playerX: finalGameplayState.playerX, teleportPhases: [...teleportPhases] });
-  result.showcase = { stateAtEnd: endState, shots: showcaseShots, playerX: finalGameplayState.playerX, teleportPhases: [...teleportPhases] };
-  assert(showcaseShots > 0 || endState === 'gameOver', 'Showcase did not fire any shots before ending');
-  result.video = { targetDurationSeconds: targetVideoDurationMs / 1000 };
   assert(errors.length === 0, `Browser errors: ${errors.join('; ')}`);
   result.status = 'passed';
 } catch (error) {
@@ -233,7 +238,7 @@ try {
       }
     } catch (error) { errors.push(`video validation: ${error.message}`); }
   }
-  if (browser && result.status === 'passed' && errors.length === 0) {
+  if (showcaseMode && browser && result.status === 'passed' && errors.length === 0) {
     try { result.gallery = await capturePromotionalGallery(browser, errors); }
     catch (error) { errors.push(`gallery capture: ${error.stack || error}`); }
   }

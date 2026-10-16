@@ -4,7 +4,7 @@ A small HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules.
 
 ## Latest browser demo
 
-The main-branch Pages deployment runs the headless browser smoke test before publishing the site. A successful run publishes an approximately 30-second WebM app showcase—from the title screen through Customize, runtime power selection, and active gameplay—plus all eight smoke-test screenshots. A failed run does not deploy and retains its test artifacts in GitHub Actions for 14 days.
+Every push to `main` runs the fast headless smoke test before publishing the game. That deployment preserves the previously published gallery and demo media. To generate and publish a fresh approximately 30-second WebM showcase and seven-image gallery, manually run the Pages workflow with its `showcase` input enabled. Any failed test blocks deployment and retains its Actions artifacts for 14 days.
 
 [![Open the latest gameplay demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/03-game-start.png)](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
 
@@ -28,9 +28,23 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 
 ## Browser smoke test
 
-Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: set the Robot template, Arcade theme, Wand, and Boots/Specs/Radar/Shield/Drone starting loadout; start a seeded game; use ten discrete G presses for runtime power grants; then move/jump/fire and pause/resume. Movement keys are released before Wand shots so Specs auto-aim is available. The recording covers the full flow from initial title load, targeting 30 seconds total; `ffprobe` validates the finalized video is 29–32 seconds. The command exits nonzero if an assertion, browser error, or video-duration check fails.
+Run the fast smoke test from the repository root:
 
-The runner also captures seven promotional gallery stills in non-recording browser contexts after the WebM has been finalized. Those images are published at `/demos/latest/gallery/` and shown in the responsive [screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html). Existing smoke screenshots (`01-title.png` through `08-customize-options.png`), `demo.webm`, `result.json`, the gallery images, and a failure screenshot when available are written to the ignored `test-artifacts/` directory. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`. If Game Over occurs during the showcase, the recording continues to its target duration and reports that state rather than restarting and implying the same powered run continued.
+```sh
+./test-runner/run.sh
+```
+
+Docker runs the pinned headless Playwright/Chromium setup and exercises Customize (Robot/Arcade/Wand and starting powers), New Game, ten discrete G presses and Enter, movement/jump/fire, and pause/resume. It took about 8 seconds locally and writes the eight diagnostic screenshots, `result.json`, and `test.log` to ignored `test-artifacts/`. It does not record video or generate gallery images, and does not modify or remove any existing video/gallery files there.
+
+For the longer recorded app showcase and promotional gallery, run:
+
+```sh
+./test-runner/run.sh --showcase
+```
+
+This includes the same assertions, records a 29–32 second WebM, then captures seven varied stills in non-recording browser contexts after the video has been finalized. The complete command took about 45 seconds locally; the video itself remains about 30 seconds. The stills publish under `demos/latest/gallery/` and are shown in the responsive [screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html). A failed assertion preserves available artifacts and exits nonzero. In Actions, pushes to `main` use fast mode; only a manual Pages workflow dispatch with `showcase` enabled generates and publishes new media. Fast deployments preserve the previously published media, tolerating a first deployment where none exists.
+
+Set `TEST_ARTIFACTS_DIR` to write generated files elsewhere when you want to keep an existing local artifact directory untouched.
 
 This is a basic workflow smoke test, not comprehensive gameplay or visual-regression coverage; screenshots are evidence for inspection, not pixel-diff assertions.
 
