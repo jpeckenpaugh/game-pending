@@ -1,6 +1,6 @@
 // Owns the main loop and high-level update order. Most domain behavior lives in
 // focused modules; this file coordinates camera, phase flow, and system updates.
-import { camera, canvas, ctx, customization, drops, enemies, game, player, states, updatePlayerFaceMood, world } from "./state.js";
+import { camera, canvas, ctx, customization, drops, enemies, game, player, powerUps, projectiles, states, updatePlayerFaceMood, world } from "./state.js";
 import { draw } from "./render.js";
 import { resizeCanvas, groundAt, worldContentBounds } from "./terrain.js";
 import { setupInput } from "./input.js";
@@ -24,9 +24,34 @@ if (new URLSearchParams(window.location.search).has("test")) {
     ammo: player.ammo,
     playerX: player.x,
     playerY: player.y,
+    playerFacing: player.facing,
     colorTheme: customization.colorTheme,
+    template: customization.template,
+    weaponType: customization.weaponType,
+    startingPowerUps: {
+      bootsLevel: customization.startingBootsLevel,
+      specs: customization.startingSpecs,
+      radar: customization.startingRadar,
+      shieldLevel: customization.startingShieldLevel,
+      droneLevel: customization.startingDroneLevel,
+    },
+    powerUps: {
+      bootsLevel: powerUps.bootsLevel,
+      specs: powerUps.specs,
+      radar: powerUps.radar,
+      shieldLevel: powerUps.shieldLevel,
+      shieldCharges: powerUps.shieldCharges,
+      droneLevel: powerUps.droneLevel,
+      droneCharges: powerUps.droneCharges,
+      hasteLevel: powerUps.hasteLevel,
+    },
+    powerChoices: game.powerChoices.map(({ type, name }) => ({ type, name })),
+    lastPowerUp: game.lastPowerUp,
     enemies: enemies.filter((enemy) => enemy.alive).length,
     customizeField: customization.selectedField,
+    teleportPhase: game.teleportPhase,
+    worldWidth: world.width,
+    projectiles: projectiles.map(({ weaponType, vx, vy }) => ({ weaponType, vx, vy })),
   });
 }
 

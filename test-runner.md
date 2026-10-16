@@ -21,19 +21,20 @@ The runner must work on ordinary developer/CI machines and must not depend on a 
 
 ## Proposed first workflow
 
-Use the existing keyboard navigation and gameplay controls. Repository inspection confirmed the title-to-Customize route and that the Customize appearance fields are keyboard-editable. Change the Color Theme for the first POC; it is a concise, visible change. Confirm exact key sequencing against `html/src/input.js` and `html/src/customize.js` during implementation.
+Use the existing keyboard navigation and gameplay controls. Customize the Robot template, Arcade Color Theme, Wand weapon, and starting Boots/Specs/Radar/Shield/Drone loadout (levels 1 / on / on / 1 / 1). Start a new game, then use ten discrete G presses over about two seconds: the first opens the picker, the next nine grant and reroll. Enter grants the currently selected final option and returns to gameplay. Do not set extra starting power-ups.
 
 1. Open the locally served game and wait for the title screen.
 2. Capture `01-title.png`.
 3. Open Customize using keyboard navigation.
-4. Change the Color Theme, save, and verify return to the title screen.
+4. Set Robot, Arcade, Wand, and the approved starting power-ups; capture `08-customize-options.png`, save, and verify return to the title screen.
 5. Capture `02-customized-title.png`.
 6. Start a new game and verify the gameplay HUD is present.
 7. Capture `03-game-start.png`.
-8. Exercise movement and jump with keyboard inputs; capture `04-movement.png`.
-9. Fire at least one shot and assert ammo decreases; capture `05-fired.png`.
-10. Pause with Enter, navigate to Continue in the pause menu, activate it with Enter, and verify return to gameplay.
-11. Capture `06-resumed.png` and finish with a structured pass/fail summary.
+8. Assert that all five approved starting power-ups are active. Open the G picker, capture `07-power-choice.png`, issue nine more discrete G taps, and press Enter to accept the final choice.
+9. Tap/hold right briefly, release it before firing so Specs auto-aim is available, and jump; capture `04-movement.png`.
+10. Fire at least one Wand shot and assert ammo decreases; capture `05-fired.png`.
+11. Pause with Enter, navigate to Continue in the pause menu, activate it with Enter, and verify return to gameplay; capture `06-resumed.png`.
+12. Continue generally rightward with intermittent shots and jumps until the approximately 30-second total recording deadline. If Game Over occurs, do not restart; preserve it in the video and report the final state.
 
 Avoid asserting that a particular shot hits an enemy or that the player survives a fixed duration: those outcomes may depend on timing, enemy behavior, and viewport. The POC should test the input-to-observable-response path, not require the agent to win.
 
@@ -58,7 +59,8 @@ Initially, assert what can be observed robustly:
 - The page loads and the Canvas exists.
 - Keyboard menu actions reach Customize and return to the title screen.
 - Starting a game displays the Level/Ammo/Enemies HUD.
-- A shot reduces ammo.
+- A Wand shot with directional keys released reduces ammo while Specs is active.
+- Customize saved the requested template, theme, weapon, and starting loadout; the runtime G sequence added a meaningful power-up grant.
 - Pause/resume transitions produce the expected visible state.
 - No uncaught page errors occur.
 
@@ -79,7 +81,7 @@ Screenshot comparison should initially be for human/agent inspection, not strict
 
 - A new developer/agent can follow one documented command without a pre-existing browser or desktop session; the test container is separate from the existing development service.
 - The run uses the current working tree's game files and a real browser engine with pinned Playwright/Chromium versions.
-- A successful run emits all named screenshots and a clear success result.
+- A successful run emits all eight named screenshots and a clear success result; the video begins on the title and runs 29–32 seconds.
 - A deliberately broken assertion or page error causes a nonzero exit and retains failure artifacts.
 - The runner shuts down cleanly and does not modify game source or leave generated files tracked.
 - The test command and artifact locations are documented in the README or a dedicated test-runner section.
@@ -97,7 +99,7 @@ These decisions are approved for the POC:
 - Run the smoke test in the existing Pages workflow before publishing; do not create a separate Pages deployment workflow.
 - Use screenshots for visual inspection. Add a minimal read-only, test-mode-gated state hook only if robust behavioral assertions otherwise cannot be made.
 - In the existing Pages workflow, run the smoke test before Pages upload/deployment; on failure retain test artifacts in Actions for 14 days and do not publish.
-- On success, publish the six screenshots and approximately 30-second WebM showcase to stable `demos/latest/` URLs alongside the game, without committing generated media.
+- On success, publish the eight screenshots and approximately 30-second WebM showcase to stable `demos/latest/` URLs alongside the game, without committing generated media.
 - Keep WebM as the recording format; use no external recorder or conversion unless an observed playback problem requires revisiting the decision.
 
 CI execution is part of this approved follow-up: the existing Pages deployment is gated on the headless smoke test, while its artifacts are uploaded even after failure.
