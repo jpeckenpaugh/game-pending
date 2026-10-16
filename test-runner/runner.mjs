@@ -9,6 +9,8 @@ const output = '/artifacts';
 const port = 4173;
 const errors = [];
 let browser;
+let context;
+let video;
 let server;
 const result = { status: 'failed', startedAt: new Date().toISOString(), browser: null, steps: [], errors };
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
@@ -30,7 +32,12 @@ try {
   await new Promise((resolve) => server.listen(port, '0.0.0.0', resolve));
   browser = await chromium.launch({ headless: true });
   result.browser = { playwright: '1.55.0', chromium: browser.version(), viewport: { width: 1024, height: 768 } };
-  const page = await browser.newPage({ viewport: result.browser.viewport });
+  context = await browser.newContext({
+    viewport: result.browser.viewport,
+    recordVideo: { dir: output, size: result.browser.viewport },
+  });
+  const page = await context.newPage();
+  video = page.video();
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
   page.on('console', message => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
   await page.goto(`http://127.0.0.1:${port}/?test=1`, { waitUntil: 'networkidle' });
@@ -70,6 +77,17 @@ try {
   errors.push(String(error));
   try { if (browser?.contexts().length) await browser.contexts()[0].pages()[0]?.screenshot({ path: path.join(output, 'failure.png'), fullPage: true }); } catch {}
 } finally {
+  if (context) {
+    try { await context.close(); } catch (error) { errors.push(`context close: ${error.message}`); }
+  }
+  if (video) {
+    try { await video.saveAs(path.join(output, 'demo.webm')); }
+    catch (error) { errors.push(`video save: ${error.message}`); }
+  }
+  if (errors.length && result.status === 'passed') {
+    result.status = 'failed';
+    result.failure = `Browser or artifact errors: ${errors.join('; ')}`;
+  }
   result.finishedAt = new Date().toISOString();
   try {
     await fs.writeFile(path.join(output, 'result.json'), JSON.stringify(result, null, 2));

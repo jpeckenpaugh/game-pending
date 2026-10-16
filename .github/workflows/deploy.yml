@@ -29,14 +29,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Run browser smoke test and record demo
+        run: ./test-runner/run.sh
+
+      - name: Upload smoke-test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke-test-artifacts
+          path: test-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Assemble Pages site with latest demo media
+        run: |
+          mkdir -p _site/demos/latest
+          cp -R html/. _site/
+          cp test-artifacts/demo.webm _site/demos/latest/demo.webm
+          cp test-artifacts/0[1-6]-*.png _site/demos/latest/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Path to the folder containing your static assets
-          path: './html'
+          path: './_site'
 
       - name: Deploy to GitHub Pages
         id: deployment

@@ -2,6 +2,14 @@
 
 A small HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules. The default Classic presentation is black-and-white line art, with optional color themes for the world, opponents, gear, weapons, attacks, and drone. There is no build step and no package dependency required for normal development.
 
+## Latest browser demo
+
+The main-branch Pages deployment runs the headless browser smoke test before publishing the site. A successful run publishes the latest WebM demo and all six smoke-test screenshots; a failed run does not deploy and retains its test artifacts in GitHub Actions for 14 days.
+
+[![Open the latest gameplay demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/03-game-start.png)](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
+
+[View the title-screen screenshot](https://jpeckenpaugh.github.io/game-pending/demos/latest/01-title.png) · [View the movement screenshot](https://jpeckenpaugh.github.io/game-pending/demos/latest/04-movement.png) · [Open the WebM demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
+
 ## Run
 
 From the repository root:
@@ -22,7 +30,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 
 Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: change the color theme, start a seeded game, move/jump/fire, then pause and resume. The command exits nonzero if an assertion or browser error is detected.
 
-Screenshots (`01-title.png` through `06-resumed.png`), `result.json`, and a failure screenshot when available are written to the ignored `test-artifacts/` directory, including on failed runs. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`.
+Screenshots (`01-title.png` through `06-resumed.png`), `demo.webm`, `result.json`, and a failure screenshot when available are written to the ignored `test-artifacts/` directory, including on failed runs. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`.
 
 This is a basic workflow smoke test, not comprehensive gameplay or visual-regression coverage; screenshots are evidence for inspection, not pixel-diff assertions.
 

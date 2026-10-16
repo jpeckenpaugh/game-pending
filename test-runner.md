@@ -14,7 +14,7 @@ From the repository, one documented command should:
 2. Serve the current `html/` game over HTTP from the test-runner container.
 3. Launch a pinned Playwright/Chromium browser in headless mode.
 4. Run one deterministic, keyboard-only smoke scenario.
-5. Save screenshots and browser diagnostics to a host-accessible artifact directory.
+5. Save screenshots, a short WebM recording, and browser diagnostics to a host-accessible artifact directory.
 6. Exit nonzero on a failed assertion or browser/runtime error, and zero on success.
 
 The runner must work on ordinary developer/CI machines and must not depend on a physical display, VNC, GPU, or credentials. Keep the existing development Docker service focused on its current purpose; prefer a separate test-runner image/service.
@@ -48,6 +48,7 @@ Avoid asserting that a particular shot hits an enemy or that the player survives
 - Fix the viewport and use seeded world generation for repeatable scenario setup. Record browser/version metadata to make screenshots comparable; do not require exact pixel equality.
 - Mount an output directory at `test-artifacts/` so screenshots and reports survive container exit. Add it to `.gitignore` so generated artifacts are not committed by default.
 - Preserve failure evidence: screenshots, console errors, page errors, test log, and a concise machine-readable result (JSON or JUnit XML if readily supported).
+- Record the browser context with Playwright's native `recordVideo` support, close the context to finalize `demo.webm`, and retain the video where available on failure.
 - Add a timeout and clean shutdown for the server/browser so failed tests do not leave processes running.
 
 ## Assertions and observability
@@ -69,11 +70,9 @@ Screenshot comparison should initially be for human/agent inspection, not strict
 
 - VNC/noVNC, a Linux desktop environment, or manual remote control.
 - Mouse-coordinate automation; current workflows can be keyboard-only.
-- Cross-browser, mobile-device, or GPU compatibility matrices.
 - Full end-to-end campaign completion or autonomous gameplay strategy.
 - Pixel-perfect visual regression thresholds.
 - A general scenario DSL, test authoring UI, or test management system.
-- GitHub Actions/CI integration in this initial POC; establish the local/agent run and artifacts first, then consider CI separately.
 - Changes to game mechanics solely to make the POC pass, without a separately agreed product/testability rationale.
 
 ## Acceptance criteria
@@ -83,7 +82,7 @@ Screenshot comparison should initially be for human/agent inspection, not strict
 - A successful run emits all named screenshots and a clear success result.
 - A deliberately broken assertion or page error causes a nonzero exit and retains failure artifacts.
 - The runner shuts down cleanly and does not modify game source or leave generated files tracked.
-- The test command and artifact locations are documented in the README or a dedicated test-runner section once implemented. CI integration remains out of scope for this POC.
+- The test command and artifact locations are documented in the README or a dedicated test-runner section.
 
 ## Decisions to resolve before implementation
 
@@ -95,7 +94,10 @@ These decisions are approved for the POC:
 - Pin Playwright and its corresponding Chromium version; record versions.
 - Fix the viewport and seeded world generation, but avoid exact screenshot matching.
 - Explicitly navigate to and activate Continue to resume from pause.
-- Keep CI integration out of scope until local/agent execution is established.
+- Run the smoke test in the existing Pages workflow before publishing; do not create a separate Pages deployment workflow.
 - Use screenshots for visual inspection. Add a minimal read-only, test-mode-gated state hook only if robust behavioral assertions otherwise cannot be made.
+- In the existing Pages workflow, run the smoke test before Pages upload/deployment; on failure retain test artifacts in Actions for 14 days and do not publish.
+- On success, publish the six screenshots and WebM to stable `demos/latest/` URLs alongside the game, without committing generated media.
+- Keep WebM as the recording format; use no external recorder or conversion unless an observed playback problem requires revisiting the decision.
 
-Before implementation, the engineer should do a final sanity check of this plan against the repository and report any remaining blocker or contradiction. No implementation should begin until the PM explicitly green-lights it.
+CI execution is part of this approved follow-up: the existing Pages deployment is gated on the headless smoke test, while its artifacts are uploaded even after failure.
