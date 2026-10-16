@@ -50,6 +50,7 @@ Avoid asserting that a particular shot hits an enemy or that the player survives
 - Mount an output directory at `test-artifacts/` so screenshots and reports survive container exit. Add it to `.gitignore` so generated artifacts are not committed by default.
 - Preserve failure evidence: screenshots, console errors, page errors, test log, and a concise machine-readable result (JSON or JUnit XML if readily supported).
 - Record the browser context with Playwright's native `recordVideo` support starting with the first page load. Include the title, Customize/options, game start, and active gameplay in a total video runtime target of 29–32 seconds. Close the context to finalize `demo.webm`, measure its duration with `ffprobe`, and retain the video where available on failure.
+- After finalizing the demo context, capture title, options, Choose Power, and Original/Emoji/Farm/Robot promotional stills in separate non-recording browser contexts. Use the existing keyboard Customize flow with distinct deterministic mode configurations and starting loadouts; save these separately under `test-artifacts/gallery/`.
 - Add a timeout and clean shutdown for the server/browser so failed tests do not leave processes running.
 
 ## Assertions and observability
@@ -61,6 +62,7 @@ Initially, assert what can be observed robustly:
 - Starting a game displays the Level/Ammo/Enemies HUD.
 - A Wand shot with directional keys released reduces ammo while Specs is active.
 - Customize saved the requested template, theme, weapon, and starting loadout; the runtime G sequence added a meaningful power-up grant.
+- The seven promotional stills use the requested mode/template/theme pairings and show distinct screens/scenes; treat them as visual showcase assets, not pixel-comparison tests.
 - Pause/resume transitions produce the expected visible state.
 - No uncaught page errors occur.
 
@@ -99,7 +101,7 @@ These decisions are approved for the POC:
 - Run the smoke test in the existing Pages workflow before publishing; do not create a separate Pages deployment workflow.
 - Use screenshots for visual inspection. Add a minimal read-only, test-mode-gated state hook only if robust behavioral assertions otherwise cannot be made.
 - In the existing Pages workflow, run the smoke test before Pages upload/deployment; on failure retain test artifacts in Actions for 14 days and do not publish.
-- On success, publish the eight screenshots and approximately 30-second WebM showcase to stable `demos/latest/` URLs alongside the game, without committing generated media.
+- On success, publish the eight diagnostic screenshots and seven promotional stills plus the approximately 30-second WebM showcase alongside the game, without committing generated media. Serve the stills through the responsive `demos/gallery.html` page.
 - Keep WebM as the recording format; use no external recorder or conversion unless an observed playback problem requires revisiting the decision.
 
 CI execution is part of this approved follow-up: the existing Pages deployment is gated on the headless smoke test, while its artifacts are uploaded even after failure.

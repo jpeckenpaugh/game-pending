@@ -50,6 +50,7 @@ jobs:
           cp -R html/. _site/
           cp test-artifacts/demo.webm _site/demos/latest/demo.webm
           cp test-artifacts/0[1-8]-*.png _site/demos/latest/
+          cp -R test-artifacts/gallery _site/demos/latest/gallery
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

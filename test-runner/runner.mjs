@@ -233,6 +233,10 @@ try {
       }
     } catch (error) { errors.push(`video validation: ${error.message}`); }
   }
+  if (browser && result.status === 'passed' && errors.length === 0) {
+    try { result.gallery = await capturePromotionalGallery(browser, errors); }
+    catch (error) { errors.push(`gallery capture: ${error.stack || error}`); }
+  }
   if (errors.length && result.status === 'passed') {
     result.status = 'failed';
     result.failure = `Browser or artifact errors: ${errors.join('; ')}`;
@@ -247,3 +251,178 @@ try {
 }
 console.log(JSON.stringify(result, null, 2));
 if (result.status !== 'passed') process.exitCode = 1;
+
+async function capturePromotionalGallery(activeBrowser, browserErrors) {
+  const galleryDirectory = path.join(output, 'gallery');
+  await fs.mkdir(galleryDirectory, { recursive: true });
+  const captures = [];
+
+  await withGalleryPage(activeBrowser, browserErrors, async (page) => {
+    await saveGalleryStill(page, galleryDirectory, 'title.png');
+  });
+  captures.push('title.png');
+
+  await withGalleryPage(activeBrowser, browserErrors, async (page) => {
+    await configureGalleryPage(page, {
+      template: 'robot', colorTheme: 'arcade', weaponType: 'wand',
+      startingPowerUps: { bootsLevel: 1, specs: 1, radar: 1, shieldLevel: 1, droneLevel: 1 },
+    }, async () => {
+      await page.waitForTimeout(450);
+      await saveGalleryStill(page, galleryDirectory, 'options.png');
+    });
+  });
+  captures.push('options.png');
+
+  await withGalleryPage(activeBrowser, browserErrors, async (page) => {
+    await configureGalleryPage(page, {
+      template: 'classic', colorTheme: 'sunset', weaponType: 'wand',
+      startingPowerUps: { bootsLevel: 0, specs: 0, radar: 0, shieldLevel: 0, droneLevel: 0 },
+    });
+    await page.keyboard.press('g');
+    await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'powerChoice');
+    await saveGalleryStill(page, galleryDirectory, 'choose-power.png');
+  });
+  captures.push('choose-power.png');
+
+  const modes = [
+    {
+      name: 'original',
+      config: {
+        template: 'classic', colorTheme: 'classic', weaponType: 'gun',
+        startingPowerUps: { bootsLevel: 0, specs: 0, radar: 0, shieldLevel: 0, droneLevel: 0 },
+      },
+      pose: async () => {},
+    },
+    {
+      name: 'emoji',
+      config: {
+        template: 'emojiColor', colorTheme: 'pastel', weaponType: 'wand',
+        startingPowerUps: { bootsLevel: 2, specs: 1, radar: 0, shieldLevel: 0, droneLevel: 0 },
+      },
+      pose: async (page) => {
+        await page.keyboard.press('x');
+        await page.waitForTimeout(220);
+        await page.keyboard.press('Space');
+        await page.waitForTimeout(100);
+      },
+    },
+    {
+      name: 'farm',
+      config: {
+        template: 'farm', colorTheme: 'natural', weaponType: 'club',
+        startingPowerUps: { bootsLevel: 0, specs: 0, radar: 1, shieldLevel: 1, droneLevel: 1 },
+      },
+      pose: async (page) => {
+        await page.keyboard.down('ArrowRight');
+        await page.waitForTimeout(520);
+        await page.keyboard.up('ArrowRight');
+        await page.waitForTimeout(120);
+      },
+    },
+    {
+      name: 'robot',
+      config: {
+        template: 'robot', colorTheme: 'arcade', weaponType: 'wand',
+        startingPowerUps: { bootsLevel: 1, specs: 1, radar: 1, shieldLevel: 2, droneLevel: 2 },
+      },
+      pose: async (page) => {
+        await page.keyboard.down('ArrowRight');
+        await page.waitForTimeout(360);
+        await page.keyboard.up('ArrowRight');
+        await page.keyboard.press('x');
+        await page.waitForTimeout(220);
+        await page.keyboard.press('Space');
+        await page.waitForTimeout(100);
+      },
+    },
+  ];
+
+  for (const mode of modes) {
+    await withGalleryPage(activeBrowser, browserErrors, async (page) => {
+      await configureGalleryPage(page, mode.config);
+      await mode.pose(page);
+      const state = await page.evaluate(() => window.__GAME_TEST__());
+      assert(state.state === 'playing', `${mode.name} gallery scene did not reach gameplay`);
+      assert(state.template === mode.config.template, `${mode.name} gallery template mismatch`);
+      assert(state.colorTheme === mode.config.colorTheme, `${mode.name} gallery theme mismatch`);
+      await saveGalleryStill(page, galleryDirectory, `${mode.name}.png`);
+    });
+    captures.push(`${mode.name}.png`);
+  }
+
+  return { directory: 'gallery/', screenshots: captures };
+}
+
+async function withGalleryPage(activeBrowser, browserErrors, capture) {
+  const galleryContext = await activeBrowser.newContext({ viewport: { width: 1024, height: 768 } });
+  try {
+    const page = await galleryContext.newPage();
+    page.on('pageerror', error => browserErrors.push(`gallery pageerror: ${error.message}`));
+    page.on('console', message => {
+      if (message.type() === 'error') browserErrors.push(`gallery console: ${message.text()}`);
+    });
+    await page.goto(`http://127.0.0.1:${port}/?test=1`, { waitUntil: 'networkidle' });
+    assert(await page.locator('canvas').count() === 1, 'Gallery page canvas missing');
+    await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'title');
+    await capture(page);
+  } finally {
+    await galleryContext.close();
+  }
+}
+
+async function configureGalleryPage(page, config, beforeSave = null) {
+  const templateSteps = { classic: 1, emojiColor: 2, farm: 4, robot: 5 }[config.template];
+  const themeSteps = { classic: 0, natural: 1, sunset: 2, arcade: 3, pastel: 4, forest: 5 }[config.colorTheme];
+  const weaponSteps = { gun: 0, club: 1, wand: 2, question: 3 }[config.weaponType];
+  assert(templateSteps !== undefined, `Unknown gallery template: ${config.template}`);
+  assert(themeSteps !== undefined, `Unknown gallery theme: ${config.colorTheme}`);
+  assert(weaponSteps !== undefined, `Unknown gallery weapon: ${config.weaponType}`);
+
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'customize');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowUp');
+  for (let i = 0; i < templateSteps; i++) await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < themeSteps; i++) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__GAME_TEST__?.().customizeField === 'startingBootsLevel');
+
+  const powerValues = [
+    config.startingPowerUps.bootsLevel,
+    config.startingPowerUps.specs,
+    config.startingPowerUps.radar,
+    config.startingPowerUps.shieldLevel,
+    config.startingPowerUps.droneLevel,
+  ];
+  for (let i = 0; i < powerValues.length; i++) {
+    for (let level = 0; level < powerValues[i]; level++) await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
+  }
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__GAME_TEST__?.().customizeField === 'powerUps');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < weaponSteps; i++) await page.keyboard.press('ArrowRight');
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
+  const configured = await page.evaluate(() => window.__GAME_TEST__());
+  assert(configured.template === config.template, `Failed to configure ${config.template} template`);
+  assert(configured.colorTheme === config.colorTheme, `Failed to configure ${config.colorTheme} theme`);
+  assert(configured.weaponType === config.weaponType, `Failed to configure ${config.weaponType} weapon`);
+  assert(JSON.stringify(configured.startingPowerUps) === JSON.stringify(config.startingPowerUps), 'Gallery starting power-up configuration mismatch');
+  if (beforeSave) await beforeSave();
+
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'title');
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => window.__GAME_TEST__?.().state === 'playing');
+  await page.waitForTimeout(1_350);
+  const started = await page.evaluate(() => window.__GAME_TEST__());
+  assert(started.template === config.template && started.colorTheme === config.colorTheme, 'Gallery game setup changed after New Game');
+  assert(started.enemies > 0, 'Gallery gameplay scene has no enemies');
+}
+
+async function saveGalleryStill(page, galleryDirectory, filename) {
+  await page.screenshot({ path: path.join(galleryDirectory, filename), fullPage: true });
+}

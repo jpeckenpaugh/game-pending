@@ -8,7 +8,7 @@ The main-branch Pages deployment runs the headless browser smoke test before pub
 
 [![Open the latest gameplay demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/03-game-start.png)](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
 
-[View Customize options](https://jpeckenpaugh.github.io/game-pending/demos/latest/08-customize-options.png) · [View power selection](https://jpeckenpaugh.github.io/game-pending/demos/latest/07-power-choice.png) · [View movement](https://jpeckenpaugh.github.io/game-pending/demos/latest/04-movement.png) · [Open the WebM demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
+[Browse the seven-image screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html) · [View Customize options](https://jpeckenpaugh.github.io/game-pending/demos/latest/08-customize-options.png) · [Open the WebM demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
 
 ## Run
 
@@ -30,7 +30,7 @@ The app uses JavaScript modules, so serve it over HTTP instead of opening `index
 
 Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: set the Robot template, Arcade theme, Wand, and Boots/Specs/Radar/Shield/Drone starting loadout; start a seeded game; use ten discrete G presses for runtime power grants; then move/jump/fire and pause/resume. Movement keys are released before Wand shots so Specs auto-aim is available. The recording covers the full flow from initial title load, targeting 30 seconds total; `ffprobe` validates the finalized video is 29–32 seconds. The command exits nonzero if an assertion, browser error, or video-duration check fails.
 
-Screenshots (`01-title.png` through `08-customize-options.png`), `demo.webm`, `result.json`, and a failure screenshot when available are written to the ignored `test-artifacts/` directory, including on failed runs. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`. If Game Over occurs during the showcase, the recording continues to its target duration and reports that state rather than restarting and implying the same powered run continued.
+The runner also captures seven promotional gallery stills in non-recording browser contexts after the WebM has been finalized. Those images are published at `/demos/latest/gallery/` and shown in the responsive [screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html). Existing smoke screenshots (`01-title.png` through `08-customize-options.png`), `demo.webm`, `result.json`, the gallery images, and a failure screenshot when available are written to the ignored `test-artifacts/` directory. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`. If Game Over occurs during the showcase, the recording continues to its target duration and reports that state rather than restarting and implying the same powered run continued.
 
 This is a basic workflow smoke test, not comprehensive gameplay or visual-regression coverage; screenshots are evidence for inspection, not pixel-diff assertions.
 

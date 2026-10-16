@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Promotional screenshots from Game Pending, a colorful Canvas side-scroller.">
+    <title>Game Pending — Screenshots</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: #141522;
+        background: #f5f8ff;
+      }
+
+      body {
+        box-sizing: border-box;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 20px 48px;
+      }
+
+      h1 { margin-bottom: 8px; }
+      .intro { margin-top: 0; color: #4b5366; }
+      .back { display: inline-block; margin: 10px 0 26px; }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+        gap: 22px;
+      }
+
+      figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid #cbd3e3;
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 5px 18px rgb(30 49 85 / 10%);
+      }
+
+      figure a { display: block; }
+      img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #fff; }
+      figcaption { padding: 12px 14px 14px; font-weight: 700; }
+
+      @media (max-width: 480px) {
+        body { padding: 22px 12px 32px; }
+        .gallery { gap: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Game Pending</h1>
+    <p class="intro">A few snapshots from the Canvas side-scroller.</p>
+    <a class="back" href="../">← Back to the game</a>
+
+    <main class="gallery" aria-label="Game Pending screenshot gallery">
+      <figure>
+        <a href="latest/gallery/title.png"><img src="latest/gallery/title.png" alt="Game Pending title screen in the original black-and-white style"></a>
+        <figcaption>Title screen</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/options.png"><img src="latest/gallery/options.png" alt="Customize screen with Robot template, Arcade colors, Wand, and starting power-ups"></a>
+        <figcaption>Customize and options</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/choose-power.png"><img src="latest/gallery/choose-power.png" alt="Choose Power screen with three power-up cards over a sunset arena"></a>
+        <figcaption>Choose Power</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/original.png"><img src="latest/gallery/original.png" alt="Classic black-and-white stick-figure gameplay in the original style"></a>
+        <figcaption>Original · Classic / Classic</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/emoji.png"><img src="latest/gallery/emoji.png" alt="Emoji Color character jumping through a pastel arena"></a>
+        <figcaption>Emoji · Emoji Color / Pastel</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/farm.png"><img src="latest/gallery/farm.png" alt="Farm character preset moving across a naturally colored arena"></a>
+        <figcaption>Farm · Farm / Natural</figcaption>
+      </figure>
+      <figure>
+        <a href="latest/gallery/robot.png"><img src="latest/gallery/robot.png" alt="Robot character in the Arcade palette with active power-ups"></a>
+        <figcaption>Robot · Robot / Arcade</figcaption>
+      </figure>
+    </main>
+  </body>
+</html>
