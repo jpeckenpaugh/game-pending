@@ -13,6 +13,23 @@ import { applyPlayerMovement, canStomp, jumpImpulse, playerDistanceTo } from "./
 import { addBurst, updateParticles } from "./effects.js";
 import { initAudio } from "./audio.js";
 
+if (new URLSearchParams(window.location.search).has("test")) {
+  let seed = 0x5eed1234;
+  Math.random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+  window.__GAME_TEST__ = () => ({
+    state: game.state,
+    ammo: player.ammo,
+    playerX: player.x,
+    playerY: player.y,
+    colorTheme: customization.colorTheme,
+    enemies: enemies.filter((enemy) => enemy.alive).length,
+    customizeField: customization.selectedField,
+  });
+}
+
 function titleZoomForContent() {
   const contentBounds = worldContentBounds();
   const contentHeight = Math.max(1, contentBounds.bottom - contentBounds.top);

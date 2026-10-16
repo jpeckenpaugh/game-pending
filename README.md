@@ -18,6 +18,14 @@ http://localhost:8000/
 
 The app uses JavaScript modules, so serve it over HTTP instead of opening `index.html` directly from the filesystem.
 
+## Browser smoke test
+
+Run `./test-runner/run.sh` from the repository root. Docker builds and runs a separate headless Playwright 1.55.0 container with its matching Chromium version. It serves the current `html/` working tree and runs a keyboard-only smoke workflow: change the color theme, start a seeded game, move/jump/fire, then pause and resume. The command exits nonzero if an assertion or browser error is detected.
+
+Screenshots (`01-title.png` through `06-resumed.png`), `result.json`, and a failure screenshot when available are written to the ignored `test-artifacts/` directory, including on failed runs. The read-only test state hook and deterministic random seed are enabled only when the runner opens the game with `?test=1`.
+
+This is a basic workflow smoke test, not comprehensive gameplay or visual-regression coverage; screenshots are evidence for inspection, not pixel-diff assertions.
+
 ## Controls
 
 - `A` / `D` or Left / Right: move
