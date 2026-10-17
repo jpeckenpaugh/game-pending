@@ -15,11 +15,17 @@ export function setupInput(canvas) {
       return;
     }
 
-    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", " ", "a", "d", "g", "x", "s", "w", "r", "z"].includes(key)) {
+    if (["arrowleft", "arrowright", "arrowup", "arrowdown", "enter", "escape", " ", "a", "d", "g", "h", "?", "x", "s", "w", "r", "z"].includes(key)) {
       event.preventDefault();
     }
 
     if (handleMenuKey(key)) {
+      keys.add(key);
+      return;
+    }
+
+    if ((key === "h" || key === "?") && game.state === states.PLAYING) {
+      openHowToPlay(states.PLAYING);
       keys.add(key);
       return;
     }
@@ -88,10 +94,20 @@ function touchZone(touch) {
 function handleMenuAction(x, y) {
   if (game.state === states.PLAYING) return false;
 
+  if (game.state === states.HOW_TO_PLAY) {
+    const backY = Math.min(window.innerHeight - 66, Math.max(470, window.innerHeight * 0.8));
+    if (insideButton(x, y, backY)) {
+      closeHowToPlay();
+      return true;
+    }
+    return false;
+  }
+
   if (game.state === states.TITLE) {
     const action = titleButtonAt(x, y);
     if (action === "newGame") return activateTitleSelection(0);
     if (action === "customize") return activateTitleSelection(1);
+    if (action === "howToPlay") return activateTitleSelection(2);
     return false;
   }
 
@@ -120,8 +136,9 @@ function handleMenuAction(x, y) {
   if (game.state === states.PAUSED) {
     const action = pauseButtonAt(x, y);
     if (action === "continue") return activatePauseSelection(0);
-    if (action === "customize") return activatePauseSelection(1);
-    if (action === "restart") return activatePauseSelection(2);
+    if (action === "howToPlay") return activatePauseSelection(1);
+    if (action === "customize") return activatePauseSelection(2);
+    if (action === "restart") return activatePauseSelection(3);
     return false;
   }
 
@@ -159,25 +176,35 @@ function handleMenuAction(x, y) {
 }
 
 function handleMenuKey(key) {
+  if (game.state === states.HOW_TO_PLAY) {
+    if (key === "enter" || key === " " || key === "escape" || key === "h" || key === "?") {
+      closeHowToPlay();
+      return true;
+    }
+    return false;
+  }
+
   if (game.state === states.TITLE) {
+    if (key === "h" || key === "?") return openHowToPlay(states.TITLE);
     if (key === "arrowup" || key === "w") {
-      game.titleSelection = (game.titleSelection + 1) % 2;
+      game.titleSelection = (game.titleSelection + 2) % 3;
       return true;
     }
     if (key === "arrowdown" || key === "s") {
-      game.titleSelection = (game.titleSelection + 1) % 2;
+      game.titleSelection = (game.titleSelection + 1) % 3;
       return true;
     }
     if (key === "enter" || key === " ") return activateTitleSelection(game.titleSelection);
   }
 
   if (game.state === states.PAUSED) {
+    if (key === "h" || key === "?") return openHowToPlay(states.PAUSED);
     if (key === "arrowup" || key === "w") {
-      game.pauseSelection = (game.pauseSelection + 2) % 3;
+      game.pauseSelection = (game.pauseSelection + 3) % 4;
       return true;
     }
     if (key === "arrowdown" || key === "s") {
-      game.pauseSelection = (game.pauseSelection + 1) % 3;
+      game.pauseSelection = (game.pauseSelection + 1) % 4;
       return true;
     }
     if (key === "enter" || key === " ") return activatePauseSelection(game.pauseSelection);
@@ -239,13 +266,27 @@ function powerChoiceAt(x, y) {
   return -1;
 }
 
+function openHowToPlay(returnState) {
+  playMenuSelect();
+  game.howToPlayReturnState = returnState;
+  game.state = states.HOW_TO_PLAY;
+  return true;
+}
+
+function closeHowToPlay() {
+  playMenuSelect();
+  game.state = game.howToPlayReturnState || states.TITLE;
+}
+
 function activateTitleSelection(selection) {
   game.titleSelection = selection;
   playMenuSelect();
   if (selection === 0) {
     beginNewGame();
-  } else {
+  } else if (selection === 1) {
     openCustomize(states.TITLE);
+  } else {
+    openHowToPlay(states.TITLE);
   }
   return true;
 }
@@ -256,6 +297,8 @@ function activatePauseSelection(selection) {
   if (selection === 0) {
     resumeGame();
   } else if (selection === 1) {
+    openHowToPlay(states.PAUSED);
+  } else if (selection === 2) {
     openCustomize(states.PAUSED);
   } else {
     returnToTitle();
@@ -264,10 +307,11 @@ function activatePauseSelection(selection) {
 }
 
 function pauseButtonAt(x, y) {
-  const startY = Math.max(210, window.innerHeight * 0.38);
+  const startY = Math.max(190, window.innerHeight * 0.34);
   if (insideButton(x, y, startY)) return "continue";
-  if (insideButton(x, y, startY + 62)) return "customize";
-  if (insideButton(x, y, startY + 124)) return "restart";
+  if (insideButton(x, y, startY + 62)) return "howToPlay";
+  if (insideButton(x, y, startY + 124)) return "customize";
+  if (insideButton(x, y, startY + 186)) return "restart";
   return "";
 }
 

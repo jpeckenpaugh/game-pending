@@ -19,16 +19,24 @@ export function drawScreenOverlay() {
     ], Math.max(112, window.innerHeight * 0.24));
     drawButton("NEW GAME", Math.max(220, window.innerHeight * 0.46), game.titleSelection === 0);
     drawButton("CUSTOMIZE", Math.max(282, window.innerHeight * 0.46 + 62), game.titleSelection === 1);
+    drawButton("HOW TO PLAY", Math.max(344, window.innerHeight * 0.46 + 124), game.titleSelection === 2);
     drawHintLines(
       window.innerWidth < 560
-        ? ["Move: A/D or arrows", "Jump: X  Aim/climb: W/Up S/Down", "Shoot: Space"]
-        : ["Move: A/D or arrows    Jump: X    Aim/climb: W/Up S/Down    Shoot: Space"],
-      Math.max(366, window.innerHeight * 0.46 + 148),
-      "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        ? [
+            "Move: A/D or arrows   Jump/Glide: X   Aim/Ladders: W/S",
+            "Attack: Space   Dash: Z   Grant Power-Ups: G   Help: H",
+          ]
+        : [
+            "Move: A/D or arrows    Jump/Glide: X    Aim/Ladders: W/Up S/Down    Attack: Space    Dash: Z",
+            "Sandbox Mode: Press G in-game to grant & reroll Power-Ups    Press H or ? for How to Play",
+          ],
+      Math.max(422, window.innerHeight * 0.46 + 206),
+      "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       20
     );
   }
 
+  if (game.state === states.HOW_TO_PLAY) drawHowToPlayScreen();
   if (game.state === states.CUSTOMIZE) drawCustomizeScreen();
   if (game.state === states.PAUSED) drawPauseScreen();
   if (game.state === states.LEVEL_COMPLETE || game.state === states.POWER_CHOICE) drawLevelPowerChoiceScreen();
@@ -137,16 +145,81 @@ function wrapCenteredText(text, x, y, maxWidth, lineHeight) {
 function drawPauseScreen() {
   drawCenteredText([
     { text: "PAUSED", font: "32px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", gap: 52 },
-  ], Math.max(118, window.innerHeight * 0.22));
+  ], Math.max(108, window.innerHeight * 0.2));
 
-  const startY = Math.max(210, window.innerHeight * 0.38);
+  const startY = Math.max(190, window.innerHeight * 0.34);
   drawButton("CONTINUE", startY, game.pauseSelection === 0);
-  drawButton("CUSTOMIZE", startY + 62, game.pauseSelection === 1);
-  drawButton("RESTART GAME", startY + 124, game.pauseSelection === 2);
+  drawButton("HOW TO PLAY", startY + 62, game.pauseSelection === 1);
+  drawButton("CUSTOMIZE", startY + 124, game.pauseSelection === 2);
+  drawButton("RESTART GAME", startY + 186, game.pauseSelection === 3);
 
   ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textAlign = "center";
-  ctx.fillText("Use Up/Down and Enter", window.innerWidth / 2, startY + 204);
+  ctx.fillText("Use Up/Down and Enter   (Press G in-game to grant Power-Ups)", window.innerWidth / 2, startY + 262);
+  ctx.textAlign = "left";
+}
+
+function drawHowToPlayScreen() {
+  const compact = window.innerHeight < 680;
+  const topY = compact ? 52 : Math.max(76, window.innerHeight * 0.11);
+  drawCenteredText([
+    { text: "HOW TO PLAY", font: `${compact ? 26 : 32}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, gap: compact ? 28 : 36 },
+    { text: "Clear every enemy wave before running out of ammo", font: `${compact ? 13 : 15}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, gap: 24 },
+  ], topY);
+
+  const boxWidth = Math.min(720, window.innerWidth - 40);
+  const boxX = (window.innerWidth - boxWidth) / 2;
+  const startY = topY + (compact ? 54 : 70);
+  const lineGap = compact ? 19 : 23;
+  let y = startY;
+
+  const sections = [
+    {
+      heading: "1. THE OBJECTIVE",
+      lines: [
+        "• Defeat all enemies in the arena to clear the wave (+4 Ammo & choose 1 of 3 Power-Ups).",
+        "• Every shot costs 1 Ammo. Collect green drops or stomp enemies from above to save ammo.",
+        "• Taking an unshielded hit or running out of ammo with no active shots ends the run.",
+      ],
+    },
+    {
+      heading: "2. CONTROLS",
+      lines: [
+        "• A / D or Left / Right : Move across platforms, underground caves & edge wrap-portals",
+        "• X : Jump (with Boots Lv. 6+, hold X after jump apex to Rocket Glide across the arena)",
+        "• W / S or Up / Down : Aim weapon vertically, climb ladders, or duck",
+        "• Space / Click : Attack with Gun, Club, or Wand    • Z : Dash burst (with Haste)",
+        "• Enter : Pause / Select menu option               • R : Quick Restart",
+      ],
+    },
+    {
+      heading: "3. SANDBOX / UNLIMITED POWER-UPS (THE 'G' KEY)",
+      lines: [
+        "• Press G anytime mid-game to open the 3-choice Power-Up Picker on demand.",
+        "• Keep pressing G inside the picker to auto-grant & reroll power-ups immediately!",
+        "• Stack Boots, Kinetic Shield, Homing Drone, Auto-Aim Specs, Radar & Haste up to Lv. 10.",
+      ],
+    },
+  ];
+
+  ctx.textAlign = "left";
+  for (const section of sections) {
+    ctx.font = `bold ${compact ? 13 : 15}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    ctx.fillText(section.heading, boxX, y);
+    y += lineGap;
+    ctx.font = `${compact ? 11.5 : 13}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    for (const line of section.lines) {
+      ctx.fillText(line, boxX + 8, y);
+      y += lineGap - 2;
+    }
+    y += compact ? 6 : 12;
+  }
+
+  const backY = Math.min(window.innerHeight - 66, Math.max(470, window.innerHeight * 0.8));
+  drawButton("BACK", backY, true);
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+  ctx.textAlign = "center";
+  ctx.fillText("Press Enter, Esc, Space, or H to return", window.innerWidth / 2, backY + 64);
   ctx.textAlign = "left";
 }
 

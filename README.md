@@ -1,120 +1,89 @@
 # Game Pending
 
-A small HTML5 Canvas side-scroller built with vanilla JavaScript and ES modules. The default Classic presentation is black-and-white line art, with optional color themes for the world, opponents, gear, weapons, attacks, and drone. There is no build step and no package dependency required for normal development.
+**An arcade arena platformer with stackable power-ups, customizable visual themes, and instant sandbox build-crafting—running natively in your browser with zero dependencies.**
 
-## Latest browser demo
+### 👉 [**▶ Play Game Pending in Your Browser (`gp.livive.net`)**](https://gp.livive.net/)
 
-Every push to `main` runs the fast headless smoke test before publishing the game. That deployment preserves the previously published gallery and demo media. To generate and publish a fresh approximately 30-second WebM showcase and seven-image gallery, manually run the Pages workflow with its `showcase` input enabled. Any failed test blocks deployment and retains its Actions artifacts for 14 days.
+[![Play Game Pending in Your Browser](https://gp.livive.net/demos/latest/03-game-start.png)](https://gp.livive.net/)
 
-[![Open the latest gameplay demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/03-game-start.png)](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
+[**▶ Play Live Now**](https://gp.livive.net/) · [**🎬 Watch 30s Gameplay Reel**](https://gp.livive.net/demos/latest/demo.webm) · [**🖼️ Visual Theme Gallery**](https://gp.livive.net/demos/gallery.html) · [**📺 Featured on Livive.net**](https://beta.livive.net/#project=game-pending)
 
-[Browse the seven-image screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html) · [View Customize options](https://jpeckenpaugh.github.io/game-pending/demos/latest/08-customize-options.png) · [Open the WebM demo](https://jpeckenpaugh.github.io/game-pending/demos/latest/demo.webm)
+---
 
-## Run
+## How to Play
 
-From the repository root:
+### 1. The Objective
+- **Clear the Wave:** Defeat every enemy in the multi-tiered arena to complete the level, earn **+4 Ammo**, and draft **1 of 3 Power-Ups** before the next wave spawns.
+- **Watch Your Ammo:** Every weapon attack costs **1 Ammo**. Conserve shots by collecting green ammo drops or **stomping enemies from above**.
+- **Survive:** Taking an unshielded hit—or hitting **0 Ammo** with no active projectiles or drops left—ends the run (`OUT OF AMMO`). Use upper platforms, underground cave routes, and left/right **wrap-around teleport portals** to outmaneuver enemy swarms.
+
+### 2. Controls
+
+| Key / Input | Action |
+| :--- | :--- |
+| **`A` / `D`** or **Left / Right** | Move across platforms, underground caves, and wrap portals |
+| **`X`** | **Jump** — with **Boots Lv. 6+**, hold **`X`** after jump apex to **Rocket Glide** |
+| **`W` / `S`** or **Up / Down** | Aim shots vertically, climb ladders up/down, or duck |
+| **`Space`** or **Left Click** | Attack with your equipped weapon (`Gun`, `Club`, or `Wand`) |
+| **`Z`** | **Dash** burst (unlocked via the **Haste** power-up) |
+| **`G`** | **Sandbox Power-Up Grant** *(see below)* |
+| **`H`** or **`?`** | Open the in-game **How to Play** screen |
+| **`Enter`** / **`R`** | Pause game (`Enter`) or Quick Restart (`R`) |
+
+### 3. Unlimited Power-Ups: The `G` Key (Sandbox Mode)
+Want to test wild endgame builds immediately without grinding waves?
+1. Press **`G`** anytime during gameplay to open the **3-Choice Power-Up Picker** on demand.
+2. Keep pressing **`G`** while the picker is open to **auto-grant a power-up and immediately reroll** the three cards.
+3. Press **`Enter`** (or `1` / `2` / `3`) to lock in your final card and jump back into the action with a fully stacked loadout.
+
+### 4. Power-Ups & Tier Evolutions
+- **Boots (Lv. 1–10):** Lv. 1–5 grant mid-air multi-jumps. Lv. 6–10 unlock **Rocket Glide** charges (hold `X` after reaching jump apex).
+- **Shield (Lv. 1–10):** Lv. 1–5 block incoming hits. Lv. 6–10 add **Kinetic Discharges** that suspend, flash, and spin attackers on contact.
+- **Drone (Lv. 1–10):** Autonomous companion that fires homing strikes (Lv. 1–5) and rapid multi-missile salvos (Lv. 6–10).
+- **Specs:** Enables automatic target lock when firing without holding a directional aim key.
+- **Radar:** Displays a live directional indicator pointing to the nearest enemy.
+- **Haste:** Increases movement speed and grants rechargeable **`Z` Dash** charges.
+
+### 5. Customize Everything
+Open **Customize** from the Title or Pause screen to remix the game on the fly:
+- **Color Themes:** `Classic` (crisp black-and-white vector line art), `Arcade`, `Natural`, `Sunset`, and `Pastel`.
+- **Character Templates:** `Classic`, `Robot`, `Emoji (Color)`, `Aquatic`, `Farm`, or mix-and-match custom heads and reactive faces.
+- **Loadout & World:** Choose your weapon (`Gun`, `Club`, `Wand`), starting power-up levels, enemy AI behavior, and seeded vs. randomized worlds.
+
+---
+
+## For Developers: Clone, Fork & Run Locally
+
+**Game Pending** is built with vanilla JavaScript ES modules and the HTML5 Canvas 2D API—no bundler, no npm install, and no build step required to play or hack on the game.
+
+### Quickstart (3 Commands)
 
 ```sh
+git clone https://github.com/jpeckenpaugh/game-pending.git
+cd game-pending
 python3 -m http.server 8000 -d html
 ```
 
-Then open:
+Then open **`http://localhost:8000/`** in your browser.
+
+### Repository Layout
 
 ```text
-http://localhost:8000/
+game-pending/
+├── html/               # Playable browser game (served directly by GitHub Pages)
+│   ├── index.html      # Canvas shell & module entrypoint
+│   ├── src/            # Modular ES6 game loop, rendering, physics, AI, and menus
+│   └── demos/          # Published 720p gameplay showcase video & theme gallery
+├── test-runner/        # Dockerized Playwright smoke test & 30s 720p showcase recorder
+└── docs/               # Architecture notes, test-runner spec, and design history
 ```
 
-The app uses JavaScript modules, so serve it over HTTP instead of opening `index.html` directly from the filesystem.
-
-## Browser smoke test
-
-Run the fast smoke test from the repository root:
+### Automated Smoke Test & 720p Showcase Recorder
+To run the headless Chromium smoke test (or regenerate the 30-second `1280x720` gameplay video and 7-image gallery via Docker):
 
 ```sh
-./test-runner/run.sh
+./test-runner/run.sh              # Fast 8-second headless smoke test
+./test-runner/run.sh --showcase   # Record 30s 720p WebM demo + 7 gallery stills
 ```
 
-Docker runs the pinned headless Playwright/Chromium setup and exercises Customize (Robot/Arcade/Wand and starting powers), New Game, ten discrete G presses and Enter, movement/jump/fire, and pause/resume. It took about 8 seconds locally and writes the eight diagnostic screenshots, `result.json`, and `test.log` to ignored `test-artifacts/`. It does not record video or generate gallery images, and does not modify or remove any existing video/gallery files there.
-
-For the longer recorded app showcase and promotional gallery, run:
-
-```sh
-./test-runner/run.sh --showcase
-```
-
-This includes the same assertions, records a 29–32 second WebM, then captures seven varied stills in non-recording browser contexts after the video has been finalized. The complete command took about 45 seconds locally; the video itself remains about 30 seconds. The stills publish under `demos/latest/gallery/` and are shown in the responsive [screenshot gallery](https://jpeckenpaugh.github.io/game-pending/demos/gallery.html). A failed assertion preserves available artifacts and exits nonzero. In Actions, pushes to `main` use fast mode; only a manual Pages workflow dispatch with `showcase` enabled generates and publishes new media. Fast deployments preserve the previously published media, tolerating a first deployment where none exists.
-
-Set `TEST_ARTIFACTS_DIR` to write generated files elsewhere when you want to keep an existing local artifact directory untouched.
-
-This is a basic workflow smoke test, not comprehensive gameplay or visual-regression coverage; screenshots are evidence for inspection, not pixel-diff assertions.
-
-## Controls
-
-- `A` / `D` or Left / Right: move
-- X: jump; hold after a Boots tier-two jump apex to rocket glide
-- `W` / Up: aim upward or climb up ladders
-- `S` / Down: duck, aim downward when airborne or climbing, climb down ladders, or enter a ladder from above
-- Space: attack with the selected weapon
-- Enter: pause / activate menu selection
-- `G`: open a three-choice power-up picker while playing; pressing `G` again in that picker auto-grants one shown power and rerolls
-- `R`: restart while playing or after game over
-
-Menus support Up / Down / Left / Right / Enter. The power-up picker also supports `1`, `2`, and `3`. Customize supports Esc to cancel or leave submenus, Tab / Shift+Tab to move between fields, and Ctrl/Cmd+Enter to save.
-
-After clearing a level, choose one of three offered power-ups before the next wave starts.
-
-## Customize
-
-Customize can change the game name, tagline, starting level, target FPS (`Auto`, `5`, `10`, `15`, `30`, `60`, or `120`), weapon (`Gun`, `Club`, or `Wand`), opponent behavior (`Simple`, `Random`, `Bold`, `Shy`, or `Mixed`), spawning locations (`Standard` or `Randomized`), and world generation (`Seeded` or `Random`).
-
-Appearance settings include:
-
-- Template presets: `Classic`, `Emoji (Color)`, `Aquatic`, `Farm`, and `Robot`. Templates currently update player and opponent head/face settings only; choosing individual head or face fields returns the template label to `Custom`.
-- Color themes: `Classic`, `Natural`, `Sunset`, `Arcade`, and `Pastel`. `Classic` keeps the original black-and-white look. Colored themes apply palettes to sky, ground, underground fills, platforms, ladders, opponents, player gear, weapons, attacks, and drone art.
-- Drone style: `Oval`, `Helicopter`, `Satellite`, or `Flying Saucer`. This is visual only; drone behavior comes from the Drone power-up level.
-- Player submenu: head shape (`Stick`, `Dog`, `Kat`, `Frog`, `Horse`, `Fish`, `Robot`, `Skull`, or `Alien`), Bighead, face mode (`Classic` or reactive `Emoji`), and face style (`Monochrome`, `Greyscale`, or `Color`).
-- Opponents submenu: separate Circle, Triangle, and Square opponent heads plus a shared opponent face style.
-- Power Ups submenu: starting Boots, Shield, and Drone levels from 0-10, plus Specs and Radar on/off.
-
-## Power Ups
-
-- Boots levels 1-5 grant refreshed mid-air jumps. Levels 6-10 add rocket glide charge, which activates by holding `X` after reaching the apex of the current jump or mid-air jump.
-- Shield levels 1-5 grant hit-blocking shield charges. Levels 6-10 add kinetic discharges that suspend, flash, and spin an enemy while preserving player motion.
-- Drone levels 1-5 grant drone strike charges. Levels 6-10 add extra missile charges for rapid homing salvos.
-- Specs enable ranged auto-aim when the player is not manually aiming.
-- Radar points toward the nearest enemy.
-
-The HUD keeps Level, Ammo, and Enemies in a framed top row. Active power-ups appear as icons in a framed bottom strip; leveled power-ups show `+N`, and charge-based abilities show one or more charge bars.
-
-## World Layout
-
-Levels are generated as expanding multi-area arenas with upper platforms, underground cave routes, ladders, and left/right wrap portals. Portal markers use a slower animated inner-oval flow, and teleporting zooms out, pans across the world, then zooms back in at the destination.
-
-## Project Structure
-
-- `html/index.html`: page shell and canvas
-- `html/src/main.js`: game loop and high-level update flow
-- `html/src/state.js`: shared mutable game state
-- `html/src/render.js`: terrain, portals, projectiles, and overall draw order
-- `html/src/enemyArt.js`: enemy drawing, including suspended/flash rendering
-- `html/src/hud.js`: framed top HUD and bottom power-up icon/charge HUD
-- `html/src/menus.js`: title, pause, customize, game-over, and power-choice overlays
-- `html/src/colorThemes.js`: optional sky, terrain, material, gear, weapon, attack, drone, and opponent color palettes
-- `html/src/powerIcons.js`: reusable power-up icon artwork for HUD and choice cards
-- `html/src/playerCharacters.js`: selectable player renderers, face expressions, and teleport effects
-- `html/src/playerPowerArt.js`: player-attached power-up visuals and held weapon drawing
-- `html/src/weapons.js`: selectable weapon renderers, including Gun, Club, and Wand
-- `html/src/player.js`: player movement, jumping, rocket glide, ducking, and stomp checks
-- `html/src/enemies.js`: enemy creation, behavior, and kinetic suspension state
-- `html/src/projectiles.js`: player attacks, directional aiming, projectile lifetimes, homing shots, and shot collisions
-- `html/src/powerups.js`: power-up grants, starting loadout, tier caps, recharge, and shield effects
-- `html/src/drone.js`: drone power-up behavior
-- `html/src/customize.js`: Customize menu state and keyboard behavior
-- `html/src/input.js`: keyboard, mouse, touch, and menu input routing
-- `html/src/terrain.js`: terrain, platforms, ladders, caves, teleports, world bounds, and world/screen conversion
-- `html/src/effects.js`: small visual effects
-- `html/src/targeting.js`: enemy targeting helpers
-
-## Notes
-
-The visual style is intentionally simple: Canvas drawing primitives, crisp line art, and optional palette fills. New character art should generally be implemented as Canvas vector commands or lightweight SVG-style path data so it stays crisp and dependency-free.
+See [docs/test-runner.md](docs/test-runner.md) and [AGENTS.md](AGENTS.md) for detailed architecture and contributor guidelines.

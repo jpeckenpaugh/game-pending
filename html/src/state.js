@@ -96,6 +96,7 @@ export const powerUpPool = ["boots", "shield", "specs", "radar", "drone", "haste
 
 export const states = {
   TITLE: "title",
+  HOW_TO_PLAY: "howToPlay",
   CUSTOMIZE: "customize",
   PAUSED: "paused",
   PLAYING: "playing",
@@ -164,9 +165,10 @@ export const customization = {
 export const game = {
   level: 1,
   enemiesRemaining: 0,
-  message: "Arrows/WASD move, X jumps, Space shoots",
+  message: "Arrows/WASD move, X jumps, Space shoots, G grants powers",
   messageTimer: 4,
   state: states.TITLE,
+  howToPlayReturnState: states.TITLE,
   completedLevel: 0,
   levelClearTimer: 0,
   lastPowerUp: "",

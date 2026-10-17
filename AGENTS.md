@@ -8,7 +8,7 @@ This is a vanilla JavaScript Canvas game. Keep it dependency-free unless there i
 python3 -m http.server 8000 -d html
 ```
 
-Or via Docker (see `docker-compose.yml`). Use `http://localhost:8000/` for local browser testing. Because `index.html` loads ES modules, do not rely on `file://` testing.
+Or via Docker (see `docs/docker/docker-compose.yml`). Use `http://localhost:8000/` for local browser testing. Because `index.html` loads ES modules, do not rely on `file://` testing.
 
 ## Code Organization
 

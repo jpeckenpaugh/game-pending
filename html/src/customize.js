@@ -183,8 +183,10 @@ export function cancelCustomize() {
 export function titleButtonAt(x, y) {
   const newGame = buttonRect(Math.max(220, window.innerHeight * 0.46));
   const customize = buttonRect(Math.max(282, window.innerHeight * 0.46 + 62));
+  const howToPlay = buttonRect(Math.max(344, window.innerHeight * 0.46 + 124));
   if (inside(x, y, newGame)) return "newGame";
   if (inside(x, y, customize)) return "customize";
+  if (inside(x, y, howToPlay)) return "howToPlay";
   return "";
 }
 

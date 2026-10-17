@@ -6,7 +6,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 
-BASE_URL = "https://jpeckenpaugh.github.io/game-pending/demos/latest/"
+BASE_URL = "https://gp.livive.net/demos/latest/"
 DESTINATION = Path("_site/demos/latest")
 ASSETS = {
     "demo.webm": "video/webm",
