@@ -56,3 +56,9 @@ for f in html/src/*.js; do node --check "$f" || exit 1; done
 ```
 
 For frontend changes, also serve the app and smoke test the relevant flow in a browser when possible.
+
+## Showcase & Demo Media Rule (720p)
+
+- Always render the ~30-second showcase video (`demo.webm`) and promotional gallery screenshots (`gallery/*.png`) at **720p (`1280x720`, 16:9 widescreen)** in `test-runner/runner.mjs`.
+- Keep both the primary recording browser context and the gallery capture context fixed at `{ width: 1280, height: 720 }` so all generated media matches 16:9 widescreen portfolio cards and hero billboards without pillarboxing.
+

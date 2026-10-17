@@ -34,7 +34,7 @@ try {
   });
   await new Promise((resolve) => server.listen(port, '0.0.0.0', resolve));
   browser = await chromium.launch({ headless: true });
-  result.browser = { playwright: '1.55.0', chromium: browser.version(), viewport: { width: 1024, height: 768 } };
+  result.browser = { playwright: '1.55.0', chromium: browser.version(), viewport: { width: 1280, height: 720 } };
   context = await browser.newContext({
     viewport: result.browser.viewport,
     ...(showcaseMode ? { recordVideo: { dir: output, size: result.browser.viewport } } : {}),
@@ -359,7 +359,7 @@ async function capturePromotionalGallery(activeBrowser, browserErrors) {
 }
 
 async function withGalleryPage(activeBrowser, browserErrors, capture) {
-  const galleryContext = await activeBrowser.newContext({ viewport: { width: 1024, height: 768 } });
+  const galleryContext = await activeBrowser.newContext({ viewport: { width: 1280, height: 720 } });
   try {
     const page = await galleryContext.newPage();
     page.on('pageerror', error => browserErrors.push(`gallery pageerror: ${error.message}`));
